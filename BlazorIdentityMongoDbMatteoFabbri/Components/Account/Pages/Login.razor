@@ -5,7 +5,8 @@
 @using Microsoft.AspNetCore.Identity
 @using BlazorIdentityMongoDbMatteoFabbri.Data
 
-@inject SignInManager<ApplicationUser> SignInManager
+@inject SignInManager<ApplicationUser> _SignInManager
+@inject UserManager<ApplicationUser> _UserManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
@@ -89,7 +90,12 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        // The email is being swapped for the username as first parameter in call to PasswordSignInAsync()
+        //var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        var user = await _UserManager.FindByEmailAsync(Input.Email);
+        var result = await _SignInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");

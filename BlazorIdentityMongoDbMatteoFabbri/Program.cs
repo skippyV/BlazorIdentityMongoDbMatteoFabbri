@@ -1,9 +1,11 @@
+using AspNetCore.Identity.Mongo.Model;
+using AspNetCore.Identity.Mongo;
 using BlazorIdentityMongoDbMatteoFabbri.Components;
 using BlazorIdentityMongoDbMatteoFabbri.Components.Account;
 using BlazorIdentityMongoDbMatteoFabbri.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
 
 namespace BlazorIdentityMongoDbMatteoFabbri
 {
@@ -22,20 +24,47 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-            builder.Services.AddAuthentication(options =>
+            //builder.Services.AddAuthentication(options =>
+            //    {
+            //        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+            //        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            //    })
+            //    .AddIdentityCookies();
+
+            //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            //builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            //    options.UseSqlServer(connectionString));
+            //builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+            //builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            //    .AddEntityFrameworkStores<ApplicationDbContext>()
+            //    .AddSignInManager()
+            //    .AddDefaultTokenProviders();
+
+            MongoDbConfig? mongoDbConfig = builder.Configuration.GetSection(nameof(MongoDbConfig)).Get<MongoDbConfig>();
+
+            builder.Services.AddIdentityMongoDbProvider<ApplicationUser, ApplicationRole>(
+                    identity =>
+                    {
+                        identity.Password.RequiredLength = 4;
+                        identity.Password.RequireNonAlphanumeric = false;
+                        identity.Password.RequireUppercase = false;
+                        identity.Password.RequireLowercase = false;
+                        identity.Password.RequireDigit = false;
+                    },
+                    mongo =>
+                    {
+                        mongo.ConnectionString = mongoDbConfig!.ConnectionString;
+                    }
+                );
+
+            builder.Services
+                .AddIdentityCore<MongoUser>()
+                .AddRoles<MongoRole>()
+                .AddMongoDbStores<MongoUser, MongoRole, ObjectId>(mongo =>
                 {
-                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+                    mongo.ConnectionString = mongoDbConfig!.ConnectionString;
                 })
-                .AddIdentityCookies();
-
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-            builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddSignInManager()
                 .AddDefaultTokenProviders();
 
@@ -46,7 +75,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.UseMigrationsEndPoint();
+                // app.UseMigrationsEndPoint();
             }
             else
             {
