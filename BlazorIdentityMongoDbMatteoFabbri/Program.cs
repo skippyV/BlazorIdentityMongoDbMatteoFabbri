@@ -31,16 +31,6 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             //    })
             //    .AddIdentityCookies();
 
-            //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            //builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            //    options.UseSqlServer(connectionString));
-            //builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-            //builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-            //    .AddEntityFrameworkStores<ApplicationDbContext>()
-            //    .AddSignInManager()
-            //    .AddDefaultTokenProviders();
-
             MongoDbConfig? mongoDbConfig = builder.Configuration.GetSection(nameof(MongoDbConfig)).Get<MongoDbConfig>();
 
             builder.Services.AddIdentityMongoDbProvider<ApplicationUser, ApplicationRole>(
@@ -59,9 +49,9 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                 );
 
             builder.Services
-                .AddIdentityCore<MongoUser>()
-                .AddRoles<MongoRole>()
-                .AddMongoDbStores<MongoUser, MongoRole, ObjectId>(mongo =>
+                .AddIdentityCore<ApplicationUser>()
+                .AddRoles<ApplicationRole>()
+                .AddMongoDbStores<ApplicationUser, ApplicationRole, ObjectId>(mongo =>
                 {
                     mongo.ConnectionString = mongoDbConfig!.ConnectionString;
                 })
