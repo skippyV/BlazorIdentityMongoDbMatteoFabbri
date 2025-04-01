@@ -24,6 +24,10 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
+            // If I include the code block below, the following error is
+            // created during app.Run()
+            // 
+            // Scheme already exists: Identity.Application
             //builder.Services.AddAuthentication(options =>
             //    {
             //        options.DefaultScheme = IdentityConstants.ApplicationScheme;
