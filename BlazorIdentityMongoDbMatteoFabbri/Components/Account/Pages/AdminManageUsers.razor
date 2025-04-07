@@ -1,0 +1,47 @@
+﻿@page "/Account/AdminManageUsers"
+@using BlazorIdentityMongoDbMatteoFabbri.Data
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+
+@inject SignInManager<ApplicationUser> _SignInManager
+@inject UserManager<ApplicationUser> _UserManager
+
+@attribute [AllowAnonymous]
+
+<h3>Admin Page for managing Users</h3>
+
+<ul style="max-height:100px">
+    @foreach (var usr in users)
+    {
+        <li>@usr.UserName</li>
+    }
+</ul>
+
+
+@code {
+    private string? errorMessage;
+    // https://www.fluentui-blazor.net/Listbox
+    // however this page, https://github.com/microsoft/fluentui-blazor/discussions/2386, 
+    // says it won't set the SelectedItem if InteractiveServer render mode is not
+    // used. Which cannot be used for this page.
+    ApplicationUser? SelectedItem;
+    string? SelectedValue;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private List<ApplicationUser> users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        }
+        users = _UserManager.Users.ToList();
+        //_UserManager.
+    }
+
+}

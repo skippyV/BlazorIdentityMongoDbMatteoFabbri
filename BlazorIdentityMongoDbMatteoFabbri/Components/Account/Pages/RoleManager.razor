@@ -1,0 +1,78 @@
+﻿@page "/UserAdmin/UserRoleManager"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using BlazorIdentityMongoDbMatteoFabbri.Data
+
+@inject SignInManager<ApplicationUser> _SignInManager
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<ApplicationRole> _RoleManager
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager _RedirectManager
+
+@attribute [AllowAnonymous]
+
+<h3>User Role Manager</h3>
+
+<div class="row">
+    <div class="col-md-4">
+        <section>
+            <StatusMessage Message="@errorMessage" />
+            <EditForm Model="Input" method="post" OnValidSubmit="CreateRole" FormName="RoleForm">
+
+                <ValidationSummary class="text-danger" role="alert" />
+                <div class="form-floating mb-3">
+                    <InputText @bind-Value="Input.RoleName" class="form-control" autocomplete="role name" aria-required="true"  />
+                </div>
+
+                <div>
+                    <button type="submit" class="w-100 btn btn-lg btn-primary">Add Role</button>
+                </div>
+            </EditForm>
+        </section>
+    </div>
+
+</div>
+<hr />
+<ul style="max-height:100px">
+    @foreach (var role in roles)
+    {
+        <li>@role.Name</li>
+    }
+</ul>
+
+
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private List<ApplicationRole> roles = new List<ApplicationRole>();
+
+    private string userRole { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        roles = _RoleManager.Roles.ToList();
+    }
+
+    private async Task CreateRole()
+    {
+        await _RoleManager.CreateAsync(new ApplicationRole(Input.RoleName));
+        _RedirectManager.RedirectToCurrentPageWithStatus($"Role {Input.RoleName} Added!", HttpContext);
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        public string RoleName { get; set; } = "";
+
+    }
+}
