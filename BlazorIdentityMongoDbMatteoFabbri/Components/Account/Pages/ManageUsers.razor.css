@@ -1,0 +1,28 @@
+﻿#table {
+    display: table;
+    padding: 5px;
+    background-color:aqua;
+}
+
+.tr {
+    display: table-row;
+    padding: 5px;
+}
+
+.td {
+    display: table-cell;
+    padding: 5px;
+    width: 150px;
+    border: #000000 solid 1px;
+    margin: 5px;
+}
+
+.warning {
+    color: red;
+    font-size: 12pt;
+    padding: 15px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    background-color: #FFCCCB;
+    border: 2px solid red;
+}

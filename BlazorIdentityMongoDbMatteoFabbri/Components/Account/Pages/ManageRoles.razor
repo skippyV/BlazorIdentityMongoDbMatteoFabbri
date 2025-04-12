@@ -1,4 +1,4 @@
-﻿@page "/UserAdmin/UserRoleManager"
+﻿@page "/Account/ManageRoles"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -15,8 +15,8 @@
 
 @attribute [AllowAnonymous]
 
-<h3>User Role Manager</h3>
-
+<h3>Role Manager</h3>
+<hr />
 <div class="row">
     <div class="col-md-4">
         <section>
@@ -29,7 +29,7 @@
                 </div>
 
                 <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Add Role</button>
+                    <button type="submit" class="w-100 btn btn-lg btn-primary">Create Role</button>
                 </div>
             </EditForm>
         </section>
@@ -37,6 +37,7 @@
 
 </div>
 <hr />
+<h4>List of Current Roles</h4>
 <ul style="max-height:100px">
     @foreach (var role in roles)
     {
@@ -65,6 +66,11 @@
 
     private async Task CreateRole()
     {
+        bool roleAlreadyExists = await _RoleManager.RoleExistsAsync(Input.RoleName);
+        if(roleAlreadyExists)
+        {
+            _RedirectManager.RedirectToCurrentPageWithStatus($"Role {Input.RoleName} already exits.", HttpContext);
+        }
         await _RoleManager.CreateAsync(new ApplicationRole(Input.RoleName));
         _RedirectManager.RedirectToCurrentPageWithStatus($"Role {Input.RoleName} Added!", HttpContext);
     }
