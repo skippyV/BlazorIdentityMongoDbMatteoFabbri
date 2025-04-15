@@ -98,6 +98,11 @@
         //var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
         var user = await _UserManager.FindByEmailAsync(Input.Email);
+        if(user is null)
+        {
+            errorMessage = $"Error: No user found for email {Input.Email}.";
+            return;
+        }
         var result = await _SignInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {

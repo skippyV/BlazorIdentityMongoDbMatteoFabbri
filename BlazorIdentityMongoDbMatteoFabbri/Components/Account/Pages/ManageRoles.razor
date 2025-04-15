@@ -71,8 +71,12 @@
         {
             _RedirectManager.RedirectToCurrentPageWithStatus($"Role {Input.RoleName} already exits.", HttpContext);
         }
-        await _RoleManager.CreateAsync(new ApplicationRole(Input.RoleName));
-        _RedirectManager.RedirectToCurrentPageWithStatus($"Role {Input.RoleName} Added!", HttpContext);
+        var response = await _RoleManager.CreateAsync(new ApplicationRole(Input.RoleName));
+        if (response.Succeeded)
+        {
+            _RedirectManager.RedirectToCurrentPageWithStatus($"Role {Input.RoleName} Added!", HttpContext);
+        }
+        _RedirectManager.RedirectToCurrentPageWithStatus($"ERROR - Adding role {Input.RoleName} to DB!", HttpContext);
     }
 
     private sealed class InputModel

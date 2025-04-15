@@ -1,0 +1,157 @@
+﻿@page "/Account/EditUser" 
+
+@* The below rendermode results in HttpContext getting set to null *@
+@* @rendermode @(new InteractiveServerRenderMode(prerender:false)) *@ 
+@* However, without it, OnInitializedAsync gets called twice.      *@
+
+@using BlazorIdentityMongoDbMatteoFabbri.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+
+@inject UserManager<ApplicationUser> _UserManager
+@inject NavigationManager _NavigationManager
+@inject SignInManager<ApplicationUser> _SignInManager
+@inject IdentityRedirectManager _RedirectManager
+
+@attribute [AllowAnonymous]
+
+
+<EditForm Model="UserDto" method="post" OnValidSubmit="EditUserData" FormName="EditUserForm">
+    <DataAnnotationsValidator />
+
+
+    <ValidationSummary class="text-danger" role="alert" />
+
+    <div class="form-floating mb-3">
+        <InputText @bind-Value="UserDto.UserName" class="form-control" autocomplete="username" aria-required="true" />
+        <label for="username">Name</label>
+        <ValidationMessage For="() => UserDto.UserName" class="text-danger" />
+    </div>
+
+    <div class="form-floating mb-3">
+        <InputText @bind-Value="UserDto.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+        <label for="email" class="form-label">Email</label>
+        <ValidationMessage For="() => UserDto.Email" class="text-danger" />
+    </div>
+
+    <div class="form-floating mb-3">
+        <InputText type="password" @bind-Value="UserDto.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+        <label for="password" class="form-label">Password</label>
+        <ValidationMessage For="() => UserDto.Password" class="text-danger" />
+    </div>
+
+    <div>
+        <button type="submit" class="w-100 btn btn-lg btn-primary">Save Changes</button>
+    </div>
+
+</EditForm>
+
+ <StatusMessage Message="@errorMessage" /> 
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery] 
+    public string? SelectedUserId { get; set; }
+
+    [SupplyParameterFromForm]
+    private InputModel UserDto { get; set; } = new();
+
+    // private InputModel UserDtoCache { get; set; } Did not work as hoped
+
+    // Property used to edit the currently selected user 
+    public ApplicationUser? SelectedUser { get; set; }
+
+    // OnAfterRenderAsync aren't invoked during prerendering or static server-side rendering (static SSR)
+    // https://learn.microsoft.com/en-us/aspnet/core/blazor/components/lifecycle?view=aspnetcore-9.0
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // { }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(SelectedUserId is not null)
+        {
+            SelectedUser = await _UserManager.FindByIdAsync(SelectedUserId);
+            if(SelectedUser is not null)
+            {
+                InitializeUserDto(); // has a hack-check to NOT initialize UserDto data if already initialized
+            }
+        }
+    }
+    
+    private void InitializeUserDto()
+    {
+        if (string.IsNullOrEmpty(UserDto.UserName))  // hack-check
+        {
+            UserDto.UserName = SelectedUser.UserName;
+            UserDto.Email = SelectedUser.Email;
+            //UserDtoCache = UserDto; // does NOT work. This cache is reset to null also
+        }
+    }
+
+    public async Task EditUserData()
+    {
+        // update password
+        if(!string.IsNullOrEmpty(UserDto.Password))
+        {
+            var token = await _UserManager.GeneratePasswordResetTokenAsync(SelectedUser);
+
+            var result = await _UserManager.ResetPasswordAsync(SelectedUser, token, UserDto.Password);
+        }
+
+        // update email
+        if (UserDto.Email != SelectedUser.Email)
+        {
+            var result = await _UserManager.SetEmailAsync(SelectedUser, UserDto.Email);
+        }
+
+
+        _RedirectManager.RedirectToWithStatus(
+                "Account/Login", "YIPPY SKIPPY", HttpContext);
+
+        // This doesn't count login failures towards account lockout
+        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+
+        // The email is being swapped for the username as first parameter in call to PasswordSignInAsync()
+        //var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        //var user = await _UserManager.FindByEmailAsync(Input.Email);
+        //var result = await _SignInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        // if (result.Succeeded)
+        // {
+        //     Logger.LogInformation("User logged in.");
+        //     RedirectManager.RedirectTo(ReturnUrl);
+        // }
+        // else if (result.RequiresTwoFactor)
+        // {
+        //     RedirectManager.RedirectTo(
+        //         "Account/LoginWith2fa",
+        //         new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+        // }
+        // else if (result.IsLockedOut)
+        // {
+        //     Logger.LogWarning("User account locked out.");
+        //     RedirectManager.RedirectTo("Account/Lockout");
+        // }
+        // else
+        // {
+        //     errorMessage = "Error: Invalid login attempt.";
+        // }
+    }
+
+    private sealed class InputModel
+    {
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Required]
+        public string UserName { get; set; }
+    }
+}

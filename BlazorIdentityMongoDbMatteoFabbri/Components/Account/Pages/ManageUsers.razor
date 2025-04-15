@@ -1,4 +1,5 @@
 ﻿@page "/Account/ManageUsers"
+
 @using BlazorIdentityMongoDbMatteoFabbri.Data
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authorization
@@ -7,25 +8,12 @@
 
 @inject SignInManager<ApplicationUser> _SignInManager
 @inject UserManager<ApplicationUser> _UserManager
+@inject NavigationManager _NavigationManager
+@inject IdentityRedirectManager _RedirectManager
 
 @attribute [AllowAnonymous]
 
-<h3>Admin Page for managing Users</h3>
-
-<h4>Selected User</h4>
-@if (SelectedUser == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <p>Name: @SelectedUser.UserName    Email: @SelectedUser.Email</p>
-}
-
-<hr />
-
-<h5>Current Users</h5>
-
+<h4>Admin Page for managing Users</h4>
 
 <div style="background-color:aquamarine; display:table">
     <div style="display:table-column; background-color:green"> </div>
@@ -34,13 +22,12 @@ else
 
     @for (int i = 0; i < users.Count; i++)
     {
-        usr2 = users[i];
+        var userLocal = users[i];
         <div style="display:table-row">
-            <div style="display:table-cell">@usr2.UserName</div>
-            <div style="display:table-cell">@usr2.Email</div>
+            <div style="display:table-cell">@userLocal.UserName</div>
+            <div style="display:table-cell">@userLocal.Email</div>
             <div style="display:table-cell">
-                <form @onsubmit="@(() => EditUser(usr2))" method="post" @formname="@($"EditForm_{i}")">
-                    @* <InputText @bind-Value=Input.UserName></InputText> *@
+                <form @onsubmit="@(() => EditUser(userLocal))" method="post" @formname="@($"EditForm_{i}")">
                     <button class="btn btn-primary">EDIT</button>
                     <AntiforgeryToken />
                 </form>
@@ -60,28 +47,10 @@ else
 
     https://stackoverflow.com/questions/74690885/passing-argument-to-onvalidsubmit-method
     OnValidSubmit="@(() => OnValidComment(post.Id))"
-*@
-@* 
-<div style="background-color:aquamarine; display:table">
-    <div style="display:table-column; background-color:green"> </div>
-    <div style="display:table-column; background-color:burlywood"> </div>
-    <div style="display:table-column; background-color:dimgray"> </div>
-    <div style="display:table-row">
-        <div style="display:table-cell">contents of first cell in row 1</div>
-        <div style="display:table-cell">contents of second cell in row 1</div>
-        <div style="display:table-cell"> Row 1, <br />Column 3</div>
-    </div>
-    <div style="display:table-row">
-        <div style="display:table-cell">contents of first cell in row 2</div>
-        <div style="display:table-cell">contents of second cell in row 2</div>
-        <div style="display:table-cell;background-color:#888888;"></div>
-    </div>
-</div> *@
 
-@* 
     This below table styling code did not work for me from 
     https://stackoverflow.com/questions/29229523/how-and-why-to-use-css-display-table-cell
-    It differs from above in that the table columns are not defined 
+    It differs from the working version in that the table columns are not defined 
     Also note that table cells of last column are empty, they are not rendered
     which is different than what is show in StackOverflow post.
 
@@ -99,42 +68,19 @@ else
             <div style="display:table;background:#888888;"></div>
         </div>
     </div>
-*@
 
-@* 
-<table class="table">
-    <tbody>
-        @foreach (var usr in users)
-        {
-            <tr>
-                <td>@usr.Id</td>
-                <td>@usr.UserName</td>
-                <td>@usr.Email</td>
-                <td>
-                    <!-- Edit the current forecast -->
-                    <button class="btn btn-primary"
-                    @onclick="(() => EditUser(usr))">
-                        Edit
-                    </button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table> *@
-
-<p>BOTTOM OF PAGE</p>
-
-@code {
     // how to make InputSelect work?  https://www.pragimtech.com/blog/blazor/blazor-select-bind-database-data/
-    ApplicationUser usr2;
-    private string? errorMessage;
     // https://www.fluentui-blazor.net/Listbox
     // however this page, https://github.com/microsoft/fluentui-blazor/discussions/2386, 
     // says it won't set the SelectedItem if InteractiveServer render mode is not
     // used. Which cannot be used for this page.
 
     //https://stackoverflow.com/questions/74690885/passing-argument-to-onvalidsubmit-method
+*@
 
+
+
+@code {
 
     string? SelectedValue;
 
@@ -146,32 +92,32 @@ else
 
     private List<ApplicationUser> users;
 
-    protected override async Task OnInitializedAsync()
-    {
-        // https://stackoverflow.com/questions/21406973/wrapping-synchronous-code-into-asynchronous-call
-        //var task = Task.Run(() => users = _UserManager.Users.ToList());
-        //users = _UserManager.Users.ToList();        
-    }
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     // https://stackoverflow.com/questions/21406973/wrapping-synchronous-code-into-asynchronous-call
+    //     //var task = Task.Run(() => users = _UserManager.Users.ToList());
+    //     //users = _UserManager.Users.ToList();        
+    // }
     protected override void OnInitialized()
     {
-        base.OnInitialized();
         users = _UserManager.Users.ToList();
-        SelectedUser = users.FirstOrDefault();
     }
-
-    // Property used to edit the currently selected user (not add user yet)
-    ApplicationUser? SelectedUser;
 
     async Task EditUser(ApplicationUser selectUsr)
     {
         // from https://blazorhelpwebsite.com/ViewBlogPost/21
 
-        // Set the selected user as the current user
-        SelectedUser = selectUsr;
-
-
         //var user = await _UserManager.FindByIdAsync(SelectedUser.Id);
-        var user = await _UserManager.FindByNameAsync(SelectedUser.UserName);
+        if (selectUsr is not null && selectUsr.UserName is not null)
+        {
+            var newUri = _NavigationManager.ToAbsoluteUri("/Account/EditUser").AbsoluteUri;
+            
+            string userIdAsString = selectUsr.Id.ToString();
+
+            newUri += "?" + $"SelectedUserId={userIdAsString}";
+
+            _RedirectManager.RedirectToWithStatus(newUri, "ok", HttpContext);
+        }
 
     }
 
