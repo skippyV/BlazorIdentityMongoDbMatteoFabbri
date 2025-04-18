@@ -16,9 +16,10 @@
 <h4>Admin Page for managing Users</h4>
 
 <div style="background-color:aquamarine; display:table">
-    <div style="display:table-column; background-color:green"> </div>
-    <div style="display:table-column; background-color:burlywood"> </div>
-    <div style="display:table-column; background-color:dimgray"> </div>
+    <div style="display:table-column; background-color:yellow"> </div>
+    <div style="display:table-column; background-color:yellowgreen"> </div>
+    <div style="display:table-column; background-color:olivedrab"> </div>
+    <div style="display:table-column; background-color:orange"> </div>
 
     @for (int i = 0; i < users.Count; i++)
     {
@@ -27,14 +28,21 @@
             <div style="display:table-cell">@userLocal.UserName</div>
             <div style="display:table-cell">@userLocal.Email</div>
             <div style="display:table-cell">
-                <form @onsubmit="@(() => EditUser(userLocal))" method="post" @formname="@($"EditForm_{i}")">
+                <form @onsubmit="@(() => EditUser(userLocal))" method="post" @formname="@($"EditFormEdit_{i}")">
                     <button class="btn btn-primary">EDIT</button>
+                    <AntiforgeryToken />
+                </form>
+            </div>
+            <div style="display:table-cell">
+                <form @onsubmit="@(() => DeleteUser(userLocal))" method="post" @formname="@($"EditFormDelete_{i}")">
+                    <button class="btn btn-primary">DELETE</button>
                     <AntiforgeryToken />
                 </form>
             </div>
         </div>
     }
 </div>
+
 
 
 @* 
@@ -75,7 +83,10 @@
     // says it won't set the SelectedItem if InteractiveServer render mode is not
     // used. Which cannot be used for this page.
 
-    //https://stackoverflow.com/questions/74690885/passing-argument-to-onvalidsubmit-method
+    // https://stackoverflow.com/questions/74690885/passing-argument-to-onvalidsubmit-method
+
+    // Confirmation Dialog implementation: https://www.pragimtech.com/blog/blazor/delete-confirmation-dialog-in-blazor/
+    // Nope - that won't work for Static SSR rendering.
 *@
 
 
@@ -102,7 +113,7 @@
     {
         users = _UserManager.Users.ToList();
     }
-
+    
     async Task EditUser(ApplicationUser selectUsr)
     {
         // from https://blazorhelpwebsite.com/ViewBlogPost/21
@@ -111,7 +122,7 @@
         if (selectUsr is not null && selectUsr.UserName is not null)
         {
             var newUri = _NavigationManager.ToAbsoluteUri("/Account/EditUser").AbsoluteUri;
-            
+
             string userIdAsString = selectUsr.Id.ToString();
 
             newUri += "?" + $"SelectedUserId={userIdAsString}";
@@ -119,6 +130,23 @@
             _RedirectManager.RedirectToWithStatus(newUri, "ok", HttpContext);
         }
 
+    }
+
+    async Task DeleteUser(ApplicationUser selectUsr)
+    {
+
+        if (selectUsr is not null && selectUsr.UserName is not null)
+        {
+            var userName = selectUsr.UserName;
+
+            var newUri = _NavigationManager.ToAbsoluteUri("/Account/ConfirmDeleteUser").AbsoluteUri;
+
+            string userIdAsString = selectUsr.Id.ToString();
+
+            newUri += "?" + $"SelectedUserId={userIdAsString}";
+
+            _RedirectManager.RedirectToWithStatus(newUri, $"Deleting User {selectUsr.UserName}", HttpContext);
+        }
     }
 
     private sealed class InputModel

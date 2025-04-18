@@ -1,0 +1,23 @@
+﻿
+.float-parent-element {
+}
+
+.float-child-element {
+    float: left;
+    width: 50%;
+}
+
+p {
+    font-style: italic;
+    font-size: 75%;
+}
+
+    p.large {
+        font-style: normal;
+        font-size: 200%;
+        color: green;
+    }
+
+.red {
+    color: red;
+}

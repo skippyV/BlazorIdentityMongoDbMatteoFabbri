@@ -1,0 +1,78 @@
+﻿@page "/Account/ConfirmDeleteUser"
+
+@using BlazorIdentityMongoDbMatteoFabbri.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+
+@inject UserManager<ApplicationUser> _UserManager
+@inject NavigationManager _NavigationManager
+@inject IdentityRedirectManager _RedirectManager
+
+@attribute [AllowAnonymous]
+
+<StatusMessage Message="@errorMessage" />
+
+<div class="largeFont"> Test CSS Class largeFont</div>
+
+<p>P text with no CSS class</p>
+<p class="large">P text with p.large CSS class</p>
+
+<p style="font-style: normal;
+        font-size: 200%;
+        color: green;">P text with inline CSS</p>
+
+<div style="width:300px">
+    <div style="float: left;width: 50%;">
+        <form @onsubmit="DeleteUser" @formname="DeleteUserForm" method="post">
+            <button class="btn btn-primary">Delete User</button>
+            <AntiforgeryToken />
+        </form>
+    </div>
+    <div style="float: left;width: 50%;">
+        <form @onsubmit="CancelDeletion" @formname="CancelDeletionForm" method="post">
+            <button class="btn btn-primary">Cancel</button>
+            <AntiforgeryToken />
+        </form>
+    </div>
+</div>
+
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    public string? SelectedUserId { get; set; }
+
+    private async Task DeleteUser(EventArgs args)
+    {
+        var usr = await _UserManager.FindByIdAsync(SelectedUserId);
+        if(usr is not null)
+        {
+            var newUri = _NavigationManager.ToAbsoluteUri("/Account/ManageUsers").AbsoluteUri;
+
+            var username = usr.UserName;
+
+            var result = await _UserManager.DeleteAsync(usr);            
+
+            if (result.Succeeded)
+            { 
+                _RedirectManager.RedirectToWithStatus(newUri, $"Delete User {username} with ID: {SelectedUserId}", HttpContext);
+            }
+            else
+            {
+                _RedirectManager.RedirectToWithStatus(newUri, $"Error deleting {username}: {result.ToString()}.", HttpContext);
+            }
+        }
+        
+
+    }
+    private void CancelDeletion(EventArgs args)
+    {
+        var newUri = _NavigationManager.ToAbsoluteUri("/Account/ManageUsers").AbsoluteUri;
+        _RedirectManager.RedirectToWithStatus(newUri, "", HttpContext);
+    }
+}
