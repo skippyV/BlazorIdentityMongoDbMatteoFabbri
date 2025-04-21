@@ -20,7 +20,7 @@
 <p class="large">P text with p.large CSS class</p>
 
 
-<div style="width:300px">
+<div class="float-parent-element">
     <div class="float-child-element">
         <form @onsubmit="DeleteUser" @formname="DeleteUserForm" method="post">
             <button class="btn btn-primary">Delete User</button>
@@ -73,7 +73,7 @@
 
             if (result.Succeeded)
             { 
-                _RedirectManager.RedirectToWithStatus(newUri, $"Delete User {username} with ID: {SelectedUserId}", HttpContext);
+                _RedirectManager.RedirectToWithStatus(newUri, $"Deleted User {username} with ID: {SelectedUserId}", HttpContext);
             }
             else
             {

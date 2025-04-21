@@ -36,8 +36,10 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             //    .AddIdentityCookies();
 
             MongoDbConfig? mongoDbConfig = builder.Configuration.GetSection(nameof(MongoDbConfig)).Get<MongoDbConfig>();
-
-            builder.Services.AddIdentityMongoDbProvider<ApplicationUser, ApplicationRole>(
+            IdentityBuilder builderResult = null;
+            try
+            {
+                builderResult = builder.Services.AddIdentityMongoDbProvider<ApplicationUser, ApplicationRole>(
                     identity =>
                     {
                         identity.Password.RequiredLength = 4;
@@ -51,16 +53,32 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                         mongo.ConnectionString = mongoDbConfig!.ConnectionString;
                     }
                 );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
 
-            builder.Services
-                .AddIdentityCore<ApplicationUser>()
-                .AddRoles<ApplicationRole>()
-                .AddMongoDbStores<ApplicationUser, ApplicationRole, ObjectId>(mongo =>
-                {
-                    mongo.ConnectionString = mongoDbConfig!.ConnectionString;
-                })
-                .AddSignInManager()
-                .AddDefaultTokenProviders();
+            // If MongoDB service is not running...
+            if (builderResult == null)
+            {
+                Console.WriteLine("ERROR ERROR - MongoDB service may not be running!");
+                Console.WriteLine("ERROR ERROR - MongoDB service may not be running!");
+                Console.WriteLine("ERROR ERROR - MongoDB service may not be running!");
+            }
+            else
+            {
+                builder.Services
+                    .AddIdentityCore<ApplicationUser>()
+                    .AddRoles<ApplicationRole>()
+                    .AddMongoDbStores<ApplicationUser, ApplicationRole, ObjectId>(mongo =>
+                    {
+                        mongo.ConnectionString = mongoDbConfig!.ConnectionString;
+                    })
+                    .AddSignInManager()
+                    .AddDefaultTokenProviders();
+            }
+
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 

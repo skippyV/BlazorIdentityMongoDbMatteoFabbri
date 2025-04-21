@@ -20,6 +20,7 @@
     <div style="display:table-column; background-color:yellowgreen"> </div>
     <div style="display:table-column; background-color:olivedrab"> </div>
     <div style="display:table-column; background-color:orange"> </div>
+    <div style="display:table-column;"> </div>
 
     @for (int i = 0; i < users.Count; i++)
     {
@@ -36,6 +37,12 @@
             <div style="display:table-cell">
                 <form @onsubmit="@(() => DeleteUser(userLocal))" method="post" @formname="@($"EditFormDelete_{i}")">
                     <button class="btn btn-primary">DELETE</button>
+                    <AntiforgeryToken />
+                </form>
+            </div>
+            <div style="display:table-cell">
+                <form @onsubmit="@(() => EditRoles(userLocal))" method="post" @formname="@($"EditFormRoles_{i}")">
+                    <button class="btn btn-primary">Edit Roles</button>
                     <AntiforgeryToken />
                 </form>
             </div>
@@ -146,6 +153,23 @@
             newUri += "?" + $"SelectedUserId={userIdAsString}";
 
             _RedirectManager.RedirectToWithStatus(newUri, $"Deleting User {selectUsr.UserName}", HttpContext);
+        }
+    }
+
+    async Task EditRoles(ApplicationUser selectUsr)
+    {
+
+        if (selectUsr is not null && selectUsr.UserName is not null)
+        {
+            var userName = selectUsr.UserName;
+
+            var newUri = _NavigationManager.ToAbsoluteUri("/Account/EditUserRoles").AbsoluteUri;
+
+            string userIdAsString = selectUsr.Id.ToString();
+
+            newUri += "?" + $"SelectedUserId={userIdAsString}";
+
+            _RedirectManager.RedirectToWithStatus(newUri, $"Current User: {selectUsr.UserName}", HttpContext);
         }
     }
 

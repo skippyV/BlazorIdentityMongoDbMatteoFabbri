@@ -1,0 +1,157 @@
+﻿@page "/Account/EditUserRoles"
+
+@using BlazorIdentityMongoDbMatteoFabbri.Data
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+@inject SignInManager<ApplicationUser> _SignInManager
+@inject UserManager<ApplicationUser> _UserManager
+@inject NavigationManager _NavigationManager
+@inject IdentityRedirectManager _RedirectManager
+@inject RoleManager<ApplicationRole> _RoleManager
+
+@attribute [AllowAnonymous]
+
+<h4>Edit Roles for User</h4>
+
+<StatusMessage Message="@errorMessage" />
+
+<h4>List of Available Roles</h4>
+<ul style="max-height:100px">
+    @foreach (var role in roles)
+    {
+        <li>@role.Name</li>
+    }
+</ul>
+
+<hr />
+
+@if(currentUser is not null)
+{
+    <h4>Current Roles for @currentUser.UserName</h4>
+
+    <ul style="max-height:100px">
+        @if (currentUser.Roles.Count > 0)
+        {
+            @foreach (var roleName in currentUser.Roles)
+            {
+                var testRole = _RoleManager.FindByIdAsync(roleName);
+                var xx = testRole.Result.Name;
+                <li>@roleName => @xx</li>
+            }
+        }
+        else
+        {
+            <li>No Roles yet</li>
+        }
+    </ul>
+}
+else
+{
+    <h3>What gives!</h3>
+}
+
+
+<div style="background-color:aquamarine; display:table">
+    <div style="display:table-column;"> </div>
+    <div style="display:table-column;"> </div>
+    <div style="display:table-column;"> </div>
+
+
+    @for (int i = 0; i < roles.Count; i++)
+    {
+        var roleLocal = roles[i];
+        <div style="display:table-row">
+            <div style="display:table-cell">@roleLocal.Name</div>
+
+            <div style="display:table-cell">
+                <form @onsubmit="@(() => AddRoleForUser(roleLocal))" method="post" @formname="@($"EditUserRolesAddRoleForm_{i}")">
+                    <button class="btn btn-primary">ADD</button>
+                    <AntiforgeryToken />
+                </form>
+            </div>
+            <div style="display:table-cell">
+                <form @onsubmit="@(() => DeleteRoleForUser(roleLocal))" method="post" @formname="@($"EditUserRolesRemoveRoleForm_{i}")">
+                    <button class="btn btn-primary">DELETE</button>
+                    <AntiforgeryToken />
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    public string? SelectedUserId { get; set; }
+
+    private List<ApplicationRole> roles = new List<ApplicationRole>();
+
+    private string userRole { get; set; }
+
+    ApplicationUser currentUser = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        roles = _RoleManager.Roles.ToList();
+        await SetCurrentUser();
+    }
+
+    private async Task SetCurrentUser()
+    {
+        if (SelectedUserId is not null)
+        {
+            currentUser = await _UserManager.FindByIdAsync(SelectedUserId);
+        }
+    }
+
+    async Task AddRoleForUser(ApplicationRole role)
+    {
+        var newUri = _NavigationManager.ToAbsoluteUri("/Account/EditUserRoles").AbsoluteUri; // this page
+
+        newUri += "?" + $"SelectedUserId={SelectedUserId}";
+
+        if (currentUser is not null && role is not null)
+        {
+            IdentityResult result = await _UserManager.AddToRoleAsync(currentUser, role.Name!);
+
+            if (result.Succeeded)
+            {
+                //_RedirectManager.RedirectToCurrentPageWithStatus($"Role {role.Name} added", HttpContext);
+                _RedirectManager.RedirectToWithStatus(newUri, $"Howdy", HttpContext);
+            }
+            else
+            {
+               // _RedirectManager.RedirectToCurrentPageWithStatus($"ERROR Adding Role {role.Name}: {result.ToString()}", HttpContext);
+                _RedirectManager.RedirectToWithStatus(newUri, $"ERROR Adding Role {role.Name}: {result.ToString()}", HttpContext);
+            }
+        }
+    }
+
+    async Task DeleteRoleForUser(ApplicationRole role)
+    {
+        var newUri = _NavigationManager.ToAbsoluteUri("/Account/EditUserRoles").AbsoluteUri; // this page
+
+        newUri += "?" + $"SelectedUserId={SelectedUserId}";
+
+        if (currentUser is not null && role is not null)
+        {
+            IdentityResult result = await _UserManager.RemoveFromRoleAsync(currentUser, role.Name!);
+
+            if(result.Succeeded)
+            {
+                _RedirectManager.RedirectToCurrentPageWithStatus($"Role {role.Name} DELETED", HttpContext);
+            }
+            else
+            {
+                _RedirectManager.RedirectToCurrentPageWithStatus($"ERROR Deleting Role {role.Name}: {result.ToString()}", HttpContext);
+            }
+        }
+    }
+}
