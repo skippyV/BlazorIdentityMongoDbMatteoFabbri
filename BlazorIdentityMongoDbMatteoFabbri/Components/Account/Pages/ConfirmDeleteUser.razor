@@ -19,18 +19,16 @@
 <p>P text with no CSS class</p>
 <p class="large">P text with p.large CSS class</p>
 
-<p style="font-style: normal;
-        font-size: 200%;
-        color: green;">P text with inline CSS</p>
 
 <div style="width:300px">
-    <div style="float: left;width: 50%;">
+    <div class="float-child-element">
         <form @onsubmit="DeleteUser" @formname="DeleteUserForm" method="post">
             <button class="btn btn-primary">Delete User</button>
             <AntiforgeryToken />
         </form>
     </div>
-    <div style="float: left;width: 50%;">
+
+    <div class="float-child-element">
         <form @onsubmit="CancelDeletion" @formname="CancelDeletionForm" method="post">
             <button class="btn btn-primary">Cancel</button>
             <AntiforgeryToken />
@@ -50,7 +48,22 @@
     private async Task DeleteUser(EventArgs args)
     {
         var usr = await _UserManager.FindByIdAsync(SelectedUserId);
-        if(usr is not null)
+
+        if (usr is not null)
+        {
+            if (HttpContext is not null && HttpContext.User.Identity.IsAuthenticated)
+            {
+                var currentLoggedInUserName = HttpContext.User.Identity.Name;
+
+                if (currentLoggedInUserName.Equals(usr.UserName))
+                {
+                    var newUri = _NavigationManager.ToAbsoluteUri("/Account/ManageUsers").AbsoluteUri;
+                    _RedirectManager.RedirectToWithStatus(newUri, $"Cannot delete user by same name ({currentLoggedInUserName}) as logged in user.", HttpContext);
+                }
+            }
+        }
+
+        if (usr is not null)
         {
             var newUri = _NavigationManager.ToAbsoluteUri("/Account/ManageUsers").AbsoluteUri;
 

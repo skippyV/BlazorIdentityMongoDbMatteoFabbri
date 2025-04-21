@@ -89,10 +89,10 @@
     // Nope - that won't work for Static SSR rendering.
 *@
 
-
+<StatusMessage Message="@errorMessage" />
 
 @code {
-
+    private string? errorMessage;
     string? SelectedValue;
 
     [CascadingParameter]
