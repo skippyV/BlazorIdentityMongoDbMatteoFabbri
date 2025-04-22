@@ -28,6 +28,11 @@
 
 <hr />
 
+@* 
+    Note: without the below null-check for currentUser, the ABOVE
+    foreach(var role in roles) gets a null reference error!! 
+*@
+
 @if(currentUser is not null)
 {
     <h4>Current Roles for @currentUser.UserName</h4>
@@ -38,8 +43,7 @@
             @foreach (var roleName in currentUser.Roles)
             {
                 var testRole = _RoleManager.FindByIdAsync(roleName);
-                var xx = testRole.Result.Name;
-                <li>@roleName => @xx</li>
+                <li>@roleName => @testRole!.Result!.Name</li>
             }
         }
         else
@@ -48,10 +52,7 @@
         }
     </ul>
 }
-else
-{
-    <h3>What gives!</h3>
-}
+
 
 
 <div style="background-color:aquamarine; display:table">
@@ -113,9 +114,7 @@ else
 
     async Task AddRoleForUser(ApplicationRole role)
     {
-        var newUri = _NavigationManager.ToAbsoluteUri("/Account/EditUserRoles").AbsoluteUri; // this page
-
-        newUri += "?" + $"SelectedUserId={SelectedUserId}";
+        var newUri = AddUserToURI("/Account/EditUserRoles"); // this page
 
         if (currentUser is not null && role is not null)
         {
@@ -124,11 +123,11 @@ else
             if (result.Succeeded)
             {
                 //_RedirectManager.RedirectToCurrentPageWithStatus($"Role {role.Name} added", HttpContext);
-                _RedirectManager.RedirectToWithStatus(newUri, $"Howdy", HttpContext);
+                _RedirectManager.RedirectToWithStatus(newUri, $"Role {role.Name} ADDED", HttpContext);
             }
             else
             {
-               // _RedirectManager.RedirectToCurrentPageWithStatus($"ERROR Adding Role {role.Name}: {result.ToString()}", HttpContext);
+                // _RedirectManager.RedirectToCurrentPageWithStatus($"ERROR Adding Role {role.Name}: {result.ToString()}", HttpContext);
                 _RedirectManager.RedirectToWithStatus(newUri, $"ERROR Adding Role {role.Name}: {result.ToString()}", HttpContext);
             }
         }
@@ -136,9 +135,7 @@ else
 
     async Task DeleteRoleForUser(ApplicationRole role)
     {
-        var newUri = _NavigationManager.ToAbsoluteUri("/Account/EditUserRoles").AbsoluteUri; // this page
-
-        newUri += "?" + $"SelectedUserId={SelectedUserId}";
+        var newUri = AddUserToURI("/Account/EditUserRoles"); // this page
 
         if (currentUser is not null && role is not null)
         {
@@ -146,12 +143,21 @@ else
 
             if(result.Succeeded)
             {
-                _RedirectManager.RedirectToCurrentPageWithStatus($"Role {role.Name} DELETED", HttpContext);
+                // _RedirectManager.RedirectToCurrentPageWithStatus($"Role {role.Name} DELETED", HttpContext);
+                _RedirectManager.RedirectToWithStatus(newUri, $"Role {role.Name} DELETED", HttpContext);
             }
             else
             {
-                _RedirectManager.RedirectToCurrentPageWithStatus($"ERROR Deleting Role {role.Name}: {result.ToString()}", HttpContext);
+                // _RedirectManager.RedirectToCurrentPageWithStatus($"ERROR Deleting Role {role.Name}: {result.ToString()}", HttpContext);
+                _RedirectManager.RedirectToWithStatus(newUri, $"ERROR Deleting Role {role.Name}: {result.ToString()}", HttpContext);
             }
         }
+    }
+
+    private string AddUserToURI(string endpoint)
+    {
+        var newUri = _NavigationManager.ToAbsoluteUri(endpoint).AbsoluteUri;
+        newUri += "?" + $"SelectedUserId={SelectedUserId}";
+        return newUri;
     }
 }
