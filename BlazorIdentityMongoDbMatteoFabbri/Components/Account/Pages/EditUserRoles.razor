@@ -43,7 +43,7 @@
             @foreach (var roleName in currentUser.Roles)
             {
                 var testRole = _RoleManager.FindByIdAsync(roleName);
-                <li>@roleName => @testRole!.Result!.Name</li>
+                <li>@testRole!.Result!.Name</li>
             }
         }
         else

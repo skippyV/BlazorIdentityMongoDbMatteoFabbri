@@ -1,0 +1,118 @@
+﻿@page "/Students"
+@rendermode InteractiveServer
+
+@inject IStudentService _IStudentService
+
+<h3>StudentDbTest</h3>
+<div class="row">
+
+    <div class="col-md-4">
+
+        <div class="row">
+            <div class="col-md-4">
+                <label>Name:</label>
+            </div>
+            <div class="col-md-8">
+                <input @bind="Student.Name" style="width:100%;" placeholder="Name" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label>Roll:</label>
+            </div>
+            <div class="col-md-8">
+                <input @bind="Student.Roll" style="width:100%;" placeholder="Roll" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label>Age:</label>
+            </div>
+            <div class="col-md-8">
+                <input @bind="Student.Age" style="width:100%;" placeholder="Age" />
+            </div>
+        </div>  <br />
+        <div class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-8">
+                <button class="btn btn-primary mx-auto d-block" @onclick="@(e => Save())">Save</button>
+                <!--The e => Save() lambda expression can be read as "when the click event (e) happens, execute the Save() method." -->
+                <!--
+                <button class="btn btn-danger" @onclick="@(e => Reset())" style="float:right;">Reset</button>
+                 -->
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <table class="table table-striped-bordered">
+            <thead>
+                <tr>
+                    <th> Student ID</th>
+                    <th> Name</th>
+                    <th> Roll</th>
+                    <th> Age</th>
+                    <th> Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Students.Count() > 0)
+                {
+                    @foreach (var stu in Students)
+                    {
+                        <tr>
+                            <td>@stu.Id</td>
+                            <td>@stu.Name</td>
+                            <td>@stu.Roll</td>
+                            <td>@stu.Age</td>
+                            <td>
+                                <button class="btn btn-primary" @onclick="@(e => Edit(@stu.Id))">Edit</button>
+                                <button class="btn btn-danger" @onclick="@(e => Delete(stu.Id))" style="float:right;">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+@code {
+    // code source: https://medium.com/@KaziMushfiq1234/blazor-crud-application-using-mongodb-f9779b4ece5e
+    Student Student = new Student();
+    List<Student> Students = new List<Student>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetStudents();
+    }
+
+    private void GetStudents()
+    {
+        Students = _IStudentService.GetStudents();
+    }
+
+    private void Save()
+    {
+        _IStudentService.SaveOrUpdate(Student);
+        Reset();
+        GetStudents();
+    }
+
+    private void Reset()
+    {
+        Student = new Student();
+    }
+
+    public void Edit(string studentId)
+    {
+        Student = _IStudentService.GetStudent(studentId);
+    }
+
+    public void Delete(string studentId)
+    {
+        _IStudentService.Delete(studentId);
+        GetStudents();
+    }
+}

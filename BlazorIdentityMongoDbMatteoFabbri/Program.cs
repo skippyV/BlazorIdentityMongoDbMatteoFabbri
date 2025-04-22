@@ -6,6 +6,7 @@ using BlazorIdentityMongoDbMatteoFabbri.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
+using BlazorIdentityMongoDbMatteoFabbri.Services;
 
 namespace BlazorIdentityMongoDbMatteoFabbri
 {
@@ -81,6 +82,8 @@ namespace BlazorIdentityMongoDbMatteoFabbri
 
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+            builder.Services.AddScoped<IStudentService, StudentService>();
 
             var app = builder.Build();
 
