@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.Identity.Mongo" Version="10.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.15" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.11.8" />
   </ItemGroup>
 

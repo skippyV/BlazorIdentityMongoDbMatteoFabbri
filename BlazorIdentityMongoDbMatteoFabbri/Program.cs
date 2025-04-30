@@ -77,9 +77,26 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                         mongo.ConnectionString = mongoDbConfig!.ConnectionString;
                     })
                     .AddSignInManager()
-                    .AddDefaultTokenProviders();
-            }
+                .AddDefaultTokenProviders();
 
+                // I DO NOT THINK I can just add AddAuthentication() here because
+                // this was working previously without using .AddAuthentication()
+                // ....but then how to add AddGoogle() ?
+
+                builder.Services.AddAuthentication(options =>
+                    {
+                        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+                    })
+
+                    .AddGoogle(googleOptions =>
+                    {
+                        googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+                        googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+                    });
+                // .AddApplicationCookie();// Error when adding this line: "Scheme already exists: Identity.Application" (shooting in the dark!)
+                // .AddIdentityCookies(); // Error when adding this line: "Scheme already exists: Identity.Application"
+            }
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
