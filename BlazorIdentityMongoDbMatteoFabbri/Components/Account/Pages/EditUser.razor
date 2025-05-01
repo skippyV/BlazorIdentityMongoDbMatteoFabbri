@@ -82,7 +82,7 @@
             }
         }
     }
-    
+
     private void InitializeUserDto()
     {
         if (string.IsNullOrEmpty(UserDto.UserName))  // hack-check
@@ -95,23 +95,54 @@
 
     public async Task EditUserData()
     {
+        string statusMessage = "Updating ";
         // update password
         if(!string.IsNullOrEmpty(UserDto.Password))
         {
             var token = await _UserManager.GeneratePasswordResetTokenAsync(SelectedUser);
 
             var result = await _UserManager.ResetPasswordAsync(SelectedUser, token, UserDto.Password);
+            if (result.Succeeded)
+            {
+                statusMessage += "password ";
+            }
+            else
+            {
+                statusMessage += "ERROR setting password";
+            }
         }
 
         // update email
         if (UserDto.Email != SelectedUser.Email)
         {
             var result = await _UserManager.SetEmailAsync(SelectedUser, UserDto.Email);
+            if (result.Succeeded)
+            {
+                statusMessage += "email ";
+            }
+            else
+            {
+                statusMessage += "ERROR setting email";
+            }
+        }
+
+        // update username
+        if (UserDto.UserName != SelectedUser.UserName)
+        {
+            var result = await _UserManager.SetUserNameAsync(SelectedUser, UserDto.UserName);
+            if(result.Succeeded)
+            {
+                statusMessage += "username ";
+            }
+            else
+            {
+                statusMessage += "ERROR setting username";
+            }
         }
 
 
         _RedirectManager.RedirectToWithStatus(
-                "Account/Login", "YIPPY SKIPPY", HttpContext);
+                "Account/Login", statusMessage, HttpContext);
 
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true

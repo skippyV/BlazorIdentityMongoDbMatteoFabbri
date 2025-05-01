@@ -76,8 +76,8 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                     {
                         mongo.ConnectionString = mongoDbConfig!.ConnectionString;
                     })
-                    .AddSignInManager()
-                .AddDefaultTokenProviders();
+                    .AddSignInManager();
+                //.AddDefaultTokenProviders();
 
                 // I DO NOT THINK I can just add AddAuthentication() here because
                 // this was working previously without using .AddAuthentication()

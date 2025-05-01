@@ -152,7 +152,7 @@
 
             newUri += "?" + $"SelectedUserId={userIdAsString}";
 
-            _RedirectManager.RedirectToWithStatus(newUri, $"Deleting User {selectUsr.UserName}", HttpContext);
+            _RedirectManager.RedirectToWithStatus(newUri, $"ARE YOU SURE YOU WANT TO DELETE USER: {selectUsr.UserName}", HttpContext);
         }
     }
 

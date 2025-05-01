@@ -27,9 +27,9 @@
                 <hr />
                 <ValidationSummary class="text-danger" role="alert" />
                 <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+                    <InputText @bind-Value="Input.EmailOrUsername" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    <label for="email" class="form-label">UserName or Email</label>
+                    <ValidationMessage For="() => Input.EmailOrUsername" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
                     <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
@@ -97,13 +97,31 @@
         // The email is being swapped for the username as first parameter in call to PasswordSignInAsync()
         //var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
-        var user = await _UserManager.FindByEmailAsync(Input.Email);
-        if(user is null)
+        ApplicationUser? user = null;
+
+        bool usingEmail = LoginHelper.IsValidEmail(Input.EmailOrUsername);               
+
+        if (usingEmail)
         {
-            errorMessage = $"Error: No user found for email {Input.Email}.";
-            return;
+            user = await _UserManager.FindByEmailAsync(Input.EmailOrUsername);
+            if (user is null)
+            {
+                errorMessage = $"Error: No user found for Email: {Input.EmailOrUsername}.";
+                return;
+            }
         }
-        var result = await _SignInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        else
+        {
+            user = await _UserManager.FindByNameAsync(Input.EmailOrUsername);
+            if (user is null)
+            {
+                errorMessage = $"Error: No user found for UserName: {Input.EmailOrUsername}.";
+                return;
+            }
+        }
+        
+        var result = await _SignInManager.PasswordSignInAsync(user.UserName!, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
@@ -129,8 +147,10 @@
     private sealed class InputModel
     {
         [Required]
-        [EmailAddress]
-        public string Email { get; set; } = "";
+        // [EmailAddress]
+        [StringLength(30, ErrorMessage = "invalid length", MinimumLength = 4)]
+        [Login]
+        public string EmailOrUsername { get; set; } = "";
 
         [Required]
         [DataType(DataType.Password)]
