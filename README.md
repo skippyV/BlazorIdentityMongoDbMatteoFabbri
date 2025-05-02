@@ -1,3 +1,6 @@
+UPDATE: as of May2,2025 commits, if sources are pulled and run WITHOUT setting up user secrets in Visual Studio,
+then the app will fail upon startup.
+
 This is a Blazor server web app that uses Identity and MongoDb.
 
 Initial project setup was done via guidance from a CodeWrinkles video: https://www.youtube.com/watch?v=asa2ucbZlCI&t=48s
