@@ -1,4 +1,4 @@
-﻿@page "/Account/ExternalLogin"
+﻿@page "/Account/CompleteRegistration"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Security.Claims
@@ -14,7 +14,7 @@
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-@inject ILogger<ExternalLogin> Logger
+@inject ILogger<CompleteRegistration> Logger
 
 <PageTitle>Register</PageTitle>
 
@@ -23,7 +23,7 @@
 <h2>Associate your @ProviderDisplayName account.</h2>
 <hr />
 
-<div  class="alert alert-info">
+<div class="alert alert-info">
     You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
     Please enter an email address for this site below and click the Register button to finish
     logging in.
@@ -45,6 +45,11 @@
 </div>
 
 @code {
+    // this component is a copy of the original ExternalLogin component.
+    // following CodeWrinkles instructions of https://www.youtube.com/watch?v=r4shd_aC3T4
+    // which made the copy and diverted the flow to this compenent instead
+    // of to ExternalLogin - by tweaking path in
+    //  IdentityComponentsEndpointRouteBuilderExtensions
     public const string LoginCallbackAction = "LoginCallback";
 
     private string? message;

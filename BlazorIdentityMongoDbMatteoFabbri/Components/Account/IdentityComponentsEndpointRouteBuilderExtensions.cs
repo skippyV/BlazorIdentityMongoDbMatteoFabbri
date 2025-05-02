@@ -29,11 +29,11 @@ namespace Microsoft.AspNetCore.Routing
             {
                 IEnumerable<KeyValuePair<string, StringValues>> query = [
                     new("ReturnUrl", returnUrl),
-                    new("Action", ExternalLogin.LoginCallbackAction)];
+                    new("Action", CompleteRegistration.LoginCallbackAction)];
 
                 var redirectUrl = UriHelper.BuildRelative(
                     context.Request.PathBase,
-                    "/Account/ExternalLogin",
+                    "/Account/CompleteRegistration",
                     QueryString.Create(query));
 
                 var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
