@@ -42,6 +42,12 @@
         <ValidationMessage For="() => UserDto.Password" class="text-danger" />
     </div>
 
+    <div class="form-floating mb-3">
+        <InputText type="password" @bind-Value="UserDto.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Please confirm your new password." />
+        <label for="confirm-password" class="form-label">Confirm password</label>
+        <ValidationMessage For="() => UserDto.ConfirmPassword" class="text-danger" />
+    </div>
+
     <div>
         <button type="submit" class="w-100 btn btn-lg btn-primary">Save Changes</button>
     </div>
@@ -182,7 +188,13 @@
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm new password")]
+        [Compare("Password", ErrorMessage = "The new password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+
         [Required]
         public string UserName { get; set; }
     }
+
 }
