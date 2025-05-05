@@ -138,21 +138,35 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                 string superUserName = "SUPERROOT";
                 Task<ApplicationUser?> resultTask = mgr.FindByNameAsync(superUserName);
 
-                if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser
+                try
                 {
-                    var user = Activator.CreateInstance<ApplicationUser>();
-                    user.Email = "test@test.com";
-                    user.UserName = "SUPERROOT";
-
-                    Task<IdentityResult> identityResult = mgr.CreateAsync(user, "PASSWORD");
-
-                    if (!identityResult.Result.Succeeded)
+                    if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser
                     {
-                        Console.WriteLine("ERROR SEEDING DATABASE!");
-                        app.DisposeAsync();
-                    }
-                }            
+                        var user = Activator.CreateInstance<ApplicationUser>();
+                        user.Email = "test@test.com";
+                        user.UserName = "SUPERROOT";
 
+                        string? password = Environment.GetEnvironmentVariable("SUPERPSSWRD");
+
+                        if (password != null)
+                        {
+                            Task<IdentityResult> identityResult = mgr.CreateAsync(user, password);
+
+                            identityResult.Wait();
+
+                            if (!identityResult.Result.Succeeded)
+                            {
+                                Console.WriteLine("ERROR SEEDING DATABASE!");
+                                app.DisposeAsync();
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("ERROR !!: " + ex.Message.ToString());
+                    app.DisposeAsync();
+                }
             }
 
             app.Run();
