@@ -127,6 +127,34 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
 
+            // seeding DB with super user account
+            using (var scope = app.Services.CreateScope())
+            {
+                // https://stackoverflow.com/questions/77904510/how-do-you-initialize-a-blazor-server-application-database-with-admin-user-on-ve
+
+                var services = scope.ServiceProvider;
+                UserManager<ApplicationUser> mgr = services.GetRequiredService<UserManager<ApplicationUser>>();
+
+                string superUserName = "SUPERROOT";
+                Task<ApplicationUser?> resultTask = mgr.FindByNameAsync(superUserName);
+
+                if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser
+                {
+                    var user = Activator.CreateInstance<ApplicationUser>();
+                    user.Email = "test@test.com";
+                    user.UserName = "SUPERROOT";
+
+                    Task<IdentityResult> identityResult = mgr.CreateAsync(user, "PASSWORD");
+
+                    if (!identityResult.Result.Succeeded)
+                    {
+                        Console.WriteLine("ERROR SEEDING DATABASE!");
+                        app.DisposeAsync();
+                    }
+                }            
+
+            }
+
             app.Run();
         }
     }
