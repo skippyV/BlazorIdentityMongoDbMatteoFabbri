@@ -3,13 +3,13 @@ then the app will fail upon startup.
 
 This is a Blazor server web app that uses Identity and MongoDb.
 This project will seed the MongoDB with a root user.
-The username and password must be defined as ENV variables:
-
-Initial project setup guidance: https://www.youtube.com/watch?v=asa2ucbZlCI&t=48s (CodeWrinkles)
+The root user's username and password must be defined as ENV variables:
  - SUPERUSERNAME
  - SUPERUSERPASSWORD
+ 
+Initial project setup guidance: https://www.youtube.com/watch?v=asa2ucbZlCI&t=48s (CodeWrinkles)
 
-This project was initially setup with the following steps.
+Initial project setup steps:
  
 Microsoft Visual Studio Community 2022 project template:
  - Blazor Web App - (choose .Net8)
