@@ -2,9 +2,15 @@ UPDATE: as of May2,2025 commits, if sources are pulled and run WITHOUT setting u
 then the app will fail upon startup.
 
 This is a Blazor server web app that uses Identity and MongoDb.
+This project will seed the MongoDB with a root user.
+The username and password must be defined as ENV variables:
 
-Initial project setup was done via guidance from a CodeWrinkles video: https://www.youtube.com/watch?v=asa2ucbZlCI&t=48s
+Initial project setup guidance: https://www.youtube.com/watch?v=asa2ucbZlCI&t=48s (CodeWrinkles)
+ - SUPERUSERNAME
+ - SUPERUSERPASSWORD
 
+This project was initially setup with the following steps.
+ 
 Microsoft Visual Studio Community 2022 project template:
  - Blazor Web App - (choose .Net8)
  - Authentication type: Individual Accounts
@@ -26,5 +32,5 @@ From NuGet tools, UN-install packages:
  - Microsoft.EntityFrameworkCore.Tools
 	
 From NuGet tools, Install packages:
-	- AspNetCore.Identity.Mongo  (by Matteo Fabbri) https://github.com/matteofabbri/AspNetCore.Identity.Mongo
+	- AspNetCore.Identity.Mongo https://github.com/matteofabbri/AspNetCore.Identity.Mongo (by Matteo Fabbri)
 

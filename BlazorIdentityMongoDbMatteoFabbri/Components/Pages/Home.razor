@@ -1,6 +1,9 @@
 ﻿@page "/"
-@using Microsoft.AspNetCore.Authorization
+
 @attribute [AllowAnonymous]
+
+@inject IRootInfoService _IRootInfoService;
+
 
 <PageTitle>Home</PageTitle>
 
@@ -14,3 +17,14 @@
 
 <p class="dippy">Text - class: dippy</p>
 <p class="skippy">Text - class: skippy</p>
+<br />
+<p> Test: @testString</p>
+
+@code {
+    private string testString = "hello";
+
+    protected override void OnInitialized()
+    {
+        testString = _IRootInfoService.GetRootUserName();
+    }
+}

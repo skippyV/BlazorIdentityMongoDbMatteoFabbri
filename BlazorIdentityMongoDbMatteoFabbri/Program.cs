@@ -77,7 +77,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                         mongo.ConnectionString = mongoDbConfig!.ConnectionString;
                     })
                     .AddSignInManager();
-                //.AddDefaultTokenProviders();
+                //.AddDefaultTokenProviders();  // Still confused about this method. When it's needed or not. Apparently, not, in my case.
 
                 // I DO NOT THINK I can just add AddAuthentication() here because
                 // this was working previously without using .AddAuthentication()
@@ -102,7 +102,20 @@ namespace BlazorIdentityMongoDbMatteoFabbri
 
             builder.Services.AddScoped<IStudentService, StudentService>();
 
-            var app = builder.Build();
+            string? rootUserName = Environment.GetEnvironmentVariable("SUPERUSERNAME");
+            string? rootUserPassword = Environment.GetEnvironmentVariable("SUPERUSERPASSWORD");
+
+            if (rootUserName != null && rootUserPassword != null)
+            {
+                builder.Services.AddScoped<IRootInfoService, RootInfoService>(serviceProvider => new(rootUserName)); // I don't understand how this syntax pulls in an expected (?) "IServiceProvider"
+            }
+            else
+            {
+                Console.WriteLine("ERROR !!: ENV VARIABLES COULD NOT BE RETRIEVED!");
+                return;
+            }
+
+            var app = builder.Build();                           
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -135,30 +148,27 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                 var services = scope.ServiceProvider;
                 UserManager<ApplicationUser> mgr = services.GetRequiredService<UserManager<ApplicationUser>>();
 
-                string superUserName = "SUPERROOT";
-                Task<ApplicationUser?> resultTask = mgr.FindByNameAsync(superUserName);
+                // just a test of my simple service - I gotta remember to use the Interace and not the implementation!
+                IRootInfoService iRootInfoService = services.GetRequiredService<IRootInfoService>();
+                string superUserName = iRootInfoService.GetRootUserName();
 
+                Task<ApplicationUser?> resultTask = mgr.FindByNameAsync(rootUserName);
                 try
                 {
                     if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser
                     {
                         var user = Activator.CreateInstance<ApplicationUser>();
                         user.Email = "test@test.com";
-                        user.UserName = "SUPERROOT";
+                        user.UserName = rootUserName;
 
-                        string? password = Environment.GetEnvironmentVariable("SUPERPSSWRD");
+                        Task<IdentityResult> identityResult = mgr.CreateAsync(user, rootUserPassword);
 
-                        if (password != null)
+                        identityResult.Wait();
+
+                        if (!identityResult.Result.Succeeded)
                         {
-                            Task<IdentityResult> identityResult = mgr.CreateAsync(user, password);
-
-                            identityResult.Wait();
-
-                            if (!identityResult.Result.Succeeded)
-                            {
-                                Console.WriteLine("ERROR SEEDING DATABASE!");
-                                app.DisposeAsync();
-                            }
+                            Console.WriteLine("ERROR SEEDING DATABASE!");
+                            app.DisposeAsync();
                         }
                     }
                 }
@@ -167,6 +177,8 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                     Console.WriteLine("ERROR !!: " + ex.Message.ToString());
                     app.DisposeAsync();
                 }
+
+
             }
 
             app.Run();
