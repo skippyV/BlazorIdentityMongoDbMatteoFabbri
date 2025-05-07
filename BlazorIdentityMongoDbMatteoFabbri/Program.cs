@@ -7,11 +7,16 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using BlazorIdentityMongoDbMatteoFabbri.Services;
+using System.Data;
 
 namespace BlazorIdentityMongoDbMatteoFabbri
 {
     public class Program
     {
+        private const string SUPERUSERNAME = "SUPERUSERNAME";
+        private const string SUPERUSERPASSWORD = "SUPERUSERPASSWORD";
+        private const string SUPERADMIN = "SUPERADMIN";
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -96,18 +101,27 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                     });
                 // .AddApplicationCookie();// Error when adding this line: "Scheme already exists: Identity.Application" (shooting in the dark!)
                 // .AddIdentityCookies(); // Error when adding this line: "Scheme already exists: Identity.Application"
+
+                builder.Services.AddAuthorization(options =>
+                {
+                    options.AddPolicy("RequireAdminRole",
+                        policy => policy.RequireRole("Admin"));
+
+                    options.AddPolicy("RequireSuperAdminRole",
+                        policy => policy.RequireRole(SUPERADMIN));
+                });
             }
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
             builder.Services.AddScoped<IStudentService, StudentService>();
 
-            string? rootUserName = Environment.GetEnvironmentVariable("SUPERUSERNAME");
-            string? rootUserPassword = Environment.GetEnvironmentVariable("SUPERUSERPASSWORD");
+            string? rootUserName = Environment.GetEnvironmentVariable(SUPERUSERNAME);
+            string? rootUserPassword = Environment.GetEnvironmentVariable(SUPERUSERPASSWORD);
 
             if (rootUserName != null && rootUserPassword != null)
             {
-                builder.Services.AddScoped<IRootInfoService, RootInfoService>(serviceProvider => new(rootUserName)); // I don't understand how this syntax pulls in an expected (?) "IServiceProvider"
+                builder.Services.AddScoped<IRootInfoService, RootInfoService>(scooby => new(rootUserName)); // I don't understand how this syntax pulls in an expected (?) "IServiceProvider"
             }
             else
             {
@@ -141,18 +155,28 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             app.MapAdditionalIdentityEndpoints();
 
             // seeding DB with super user account
+            SeedingTheDatabase(builder, app, rootUserName, rootUserPassword);
+
+            app.Run();
+        }
+        private static void SeedingTheDatabase(WebApplicationBuilder builder, 
+                                               WebApplication app,
+                                               string rootUserName,
+                                               string rootUserPassword)
+        {
             using (var scope = app.Services.CreateScope())
             {
                 // https://stackoverflow.com/questions/77904510/how-do-you-initialize-a-blazor-server-application-database-with-admin-user-on-ve
 
                 var services = scope.ServiceProvider;
-                UserManager<ApplicationUser> mgr = services.GetRequiredService<UserManager<ApplicationUser>>();
+                UserManager<ApplicationUser> userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+                RoleManager<ApplicationRole> roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
                 // just a test of my simple service - I gotta remember to use the Interace and not the implementation!
                 IRootInfoService iRootInfoService = services.GetRequiredService<IRootInfoService>();
                 string superUserName = iRootInfoService.GetRootUserName();
 
-                Task<ApplicationUser?> resultTask = mgr.FindByNameAsync(rootUserName);
+                Task<ApplicationUser?> resultTask = userManager.FindByNameAsync(rootUserName);
                 try
                 {
                     if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser
@@ -161,14 +185,31 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                         user.Email = "test@test.com";
                         user.UserName = rootUserName;
 
-                        Task<IdentityResult> identityResult = mgr.CreateAsync(user, rootUserPassword);
+                        Task<IdentityResult> response = userManager.CreateAsync(user, rootUserPassword);
 
-                        identityResult.Wait();
+                        response.Wait();
 
-                        if (!identityResult.Result.Succeeded)
+                        if (!response.Result.Succeeded)
                         {
                             Console.WriteLine("ERROR SEEDING DATABASE!");
                             app.DisposeAsync();
+                        }
+
+                        // if the user record did not exist then it's respective Role can also be assumed to not exist
+                        Task<bool> roleAlreadyExists = roleManager!.RoleExistsAsync(SUPERADMIN);
+                        roleAlreadyExists.Wait();
+
+                        if (roleAlreadyExists.IsCompletedSuccessfully && roleAlreadyExists.Result == false)
+                        {
+                            Task<IdentityResult> response2 = roleManager.CreateAsync(new ApplicationRole(SUPERADMIN));
+                            response2.Wait();
+                            if (!response2.Result.Succeeded)
+                            {
+                                Console.WriteLine("ERROR CREATING SUPERADMIN ROLE in DATABASE!");
+                                app.DisposeAsync();
+                            }
+                            Task<IdentityResult> response3 = userManager.AddToRoleAsync(user, SUPERADMIN);
+                            response3.Wait();
                         }
                     }
                 }
@@ -177,11 +218,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                     Console.WriteLine("ERROR !!: " + ex.Message.ToString());
                     app.DisposeAsync();
                 }
-
-
             }
-
-            app.Run();
         }
     }
 }

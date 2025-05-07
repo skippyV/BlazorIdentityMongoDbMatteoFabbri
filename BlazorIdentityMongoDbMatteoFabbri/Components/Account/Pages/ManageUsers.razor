@@ -11,7 +11,8 @@
 @inject NavigationManager _NavigationManager
 @inject IdentityRedirectManager _RedirectManager
 
-@attribute [AllowAnonymous]
+@* @attribute [AllowAnonymous] *@
+@attribute [Authorize(Policy = "RequireSuperAdminRole")]
 
 <h4>Admin Page for managing Users</h4>
 
