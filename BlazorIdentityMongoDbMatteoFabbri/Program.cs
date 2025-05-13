@@ -8,15 +8,13 @@ using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using BlazorIdentityMongoDbMatteoFabbri.Services;
 using System.Data;
+using BlazorIdentityMongoDbMatteoFabbri.Shared;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BlazorIdentityMongoDbMatteoFabbri
 {
     public class Program
     {
-        private const string SUPERUSERNAME = "SUPERUSERNAME";
-        private const string SUPERUSERPASSWORD = "SUPERUSERPASSWORD";
-        private const string SUPERADMIN = "SUPERADMIN";
-
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -42,7 +40,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri
             //    .AddIdentityCookies();
 
             MongoDbConfig? mongoDbConfig = builder.Configuration.GetSection(nameof(MongoDbConfig)).Get<MongoDbConfig>();
-            IdentityBuilder builderResult = null;
+            IdentityBuilder? builderResult = null;
             try
             {
                 builderResult = builder.Services.AddIdentityMongoDbProvider<ApplicationUser, ApplicationRole>(
@@ -104,20 +102,25 @@ namespace BlazorIdentityMongoDbMatteoFabbri
 
                 builder.Services.AddAuthorization(options =>
                 {
-                    options.AddPolicy("RequireAdminRole",
-                        policy => policy.RequireRole("Admin"));
+                    options.AddPolicy(Constants.ADMINPOLICYNAME,
+                        policy => policy.RequireRole(Constants.ADMIN));
 
-                    options.AddPolicy("RequireSuperAdminRole",
-                        policy => policy.RequireRole(SUPERADMIN));
+                    options.AddPolicy(Constants.SUPERADMINPOLICYNAME,
+                        policy => policy.RequireRole(Constants.SUPERADMIN));
+
+                    options.AddPolicy(Constants.SPECIALFLAGPOLICYNAME, policy => policy.Requirements.Add(new SpecialFlagRequirement()));
                 });
-            }
+            }            
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
             builder.Services.AddScoped<IStudentService, StudentService>();
 
-            string? rootUserName = Environment.GetEnvironmentVariable(SUPERUSERNAME);
-            string? rootUserPassword = Environment.GetEnvironmentVariable(SUPERUSERPASSWORD);
+            builder.Services.AddScoped<IAuthorizationHandler, SpecialFlagHandler>();
+            builder.Services.AddScoped<IAccessControlService, AccessControlService>();
+
+            string? rootUserName = Environment.GetEnvironmentVariable(Constants.ENVVARSUPERUSERNAME);
+            string? rootUserPassword = Environment.GetEnvironmentVariable(Constants.ENVVARSUPERUSERPASSWORD);
 
             if (rootUserName != null && rootUserPassword != null)
             {
@@ -159,6 +162,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri
 
             app.Run();
         }
+        // Starting to think now that I'll need to seed the database with permissions for Admin and SuperUser
         private static void SeedingTheDatabase(WebApplicationBuilder builder, 
                                                WebApplication app,
                                                string rootUserName,
@@ -176,10 +180,14 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                 IRootInfoService iRootInfoService = services.GetRequiredService<IRootInfoService>();
                 string superUserName = iRootInfoService.GetRootUserName();
 
+                // create admin roles
+                AddRole(Constants.ADMIN, roleManager, app);
+                AddRole(Constants.SUPERADMIN, roleManager, app);
+
                 Task<ApplicationUser?> resultTask = userManager.FindByNameAsync(rootUserName);
                 try
                 {
-                    if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser
+                    if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser. If null then User does not yet exist.
                     {
                         var user = Activator.CreateInstance<ApplicationUser>();
                         user.Email = "test@test.com";
@@ -191,25 +199,24 @@ namespace BlazorIdentityMongoDbMatteoFabbri
 
                         if (!response.Result.Succeeded)
                         {
-                            Console.WriteLine("ERROR SEEDING DATABASE!");
+                            Console.WriteLine("ERROR SEEDING DATABASE with new USER!");
                             app.DisposeAsync();
                         }
 
-                        // if the user record did not exist then it's respective Role can also be assumed to not exist
-                        Task<bool> roleAlreadyExists = roleManager!.RoleExistsAsync(SUPERADMIN);
-                        roleAlreadyExists.Wait();
-
-                        if (roleAlreadyExists.IsCompletedSuccessfully && roleAlreadyExists.Result == false)
+                        response = userManager.AddToRoleAsync(user, Constants.SUPERADMIN); // add role to the user
+                        response.Wait();
+                        if (!response.Result.Succeeded)
                         {
-                            Task<IdentityResult> response2 = roleManager.CreateAsync(new ApplicationRole(SUPERADMIN));
-                            response2.Wait();
-                            if (!response2.Result.Succeeded)
-                            {
-                                Console.WriteLine("ERROR CREATING SUPERADMIN ROLE in DATABASE!");
-                                app.DisposeAsync();
-                            }
-                            Task<IdentityResult> response3 = userManager.AddToRoleAsync(user, SUPERADMIN);
-                            response3.Wait();
+                            Console.WriteLine("ERROR adding SuperAdmin role to seeded USER!");
+                            app.DisposeAsync();
+                        }
+
+                        response = userManager.AddToRoleAsync(user, Constants.ADMIN); // add role to the user
+                        response.Wait();
+                        if (!response.Result.Succeeded)
+                        {
+                            Console.WriteLine("ERROR adding Admin role to seeded USER!");
+                            app.DisposeAsync();
                         }
                     }
                 }
@@ -220,5 +227,35 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                 }
             }
         }
+        private static void AddRole(string roleName, RoleManager<ApplicationRole> roleManager, WebApplication app)
+        {
+            Task<bool> roleAlreadyExists = roleManager!.RoleExistsAsync(roleName);
+            roleAlreadyExists.Wait();
+
+            if (roleAlreadyExists.IsCompletedSuccessfully && roleAlreadyExists.Result == false)
+            {
+                Task<IdentityResult> response2 = roleManager.CreateAsync(new ApplicationRole(roleName));
+                response2.Wait();
+                if (!response2.Result.Succeeded)
+                {
+                    Console.WriteLine($"ERROR CREATING {roleName} ROLE in DATABASE!");
+                    app.DisposeAsync();
+                }
+            }
+        }
+    }
+
+    static class Constants
+    {
+        public const string ADMIN = "Admin";        
+        public const string ADMINPOLICYNAME = "RequireAdminRole";
+
+        public const string SUPERADMIN = "SuperAdmin";
+        public const string SUPERADMINPOLICYNAME = "RequireSuperAdminRole";
+
+        public const string SPECIALFLAGPOLICYNAME = "SpecialFlagPolicy";
+
+        public const string ENVVARSUPERUSERNAME = "SUPERUSERNAME";
+        public const string ENVVARSUPERUSERPASSWORD = "SUPERUSERPASSWORD";
     }
 }

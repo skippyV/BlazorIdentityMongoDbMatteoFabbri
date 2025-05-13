@@ -1,5 +1,56 @@
-﻿<h3>AuthWithPolicyDbAccess</h3>
+﻿@page "/AuthFromProfileDB"
+@attribute [Authorize(Policy = Constants.SPECIALFLAGPOLICYNAME)]
+
+<h3>AuthWithPolicyDbAccess</h3>
+
+<AuthorizeView>
+    <Authorized>
+        This content is displayed only if the user is Authorized
+        <p>User: @context.User.Identity!.Name</p>
+    </Authorized>
+    <NotAuthorized>
+        This content is displayed if the user is Not Authorized
+    </NotAuthorized>
+</AuthorizeView>
+
+<p>authenticated user MESSAGE: @authMessage</p>
+
+<AuthorizeView Policy="SpecialFlagPolicy">
+    <Authorized>
+        <p>You satisfy the SpecialFlagPolicy policy</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>You DO NOT satisfy the SpecialFlagPolicy policy!</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
 
 @code {
+    private string authMessage = "The user is NOT authenticated.";
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }    
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationState is not null)
+        {
+            var authState = await authenticationState;
+            var user = authState?.User;
+
+            if (user?.Identity is not null && user.Identity.IsAuthenticated)
+            {
+                authMessage = $"{user.Identity.Name} is authenticated.";
+            }
+            else
+            {
+                authMessage = "ACCESS DENIED";
+            }
+        }
+        
+    }
+
+
 
 }

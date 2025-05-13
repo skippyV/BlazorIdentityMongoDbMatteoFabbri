@@ -1,0 +1,13 @@
+﻿@page "/AuthWithSuperAdmin"
+
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Policy = Constants.SUPERADMINPOLICYNAME)]
+
+<PageTitle>Auth</PageTitle>
+
+<h1>You are authenticated as a Super Admin!</h1>
+
+<AuthorizeView>
+    Hello @context.User.Identity?.Name!
+</AuthorizeView>

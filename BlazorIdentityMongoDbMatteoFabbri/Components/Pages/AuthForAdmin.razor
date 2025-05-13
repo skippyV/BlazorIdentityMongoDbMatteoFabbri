@@ -1,12 +1,12 @@
-﻿@page "/auth"
+﻿@page "/AuthWithAdmin"
 
 @using Microsoft.AspNetCore.Authorization
 
-@attribute [Authorize(Policy ="RequireAdminRole")]
+@attribute [Authorize(Policy = Constants.ADMINPOLICYNAME)]
 
 <PageTitle>Auth</PageTitle>
 
-<h1>You are authenticated</h1>
+<h1>You are authenticated as an Admin</h1>
 
 <AuthorizeView>
     Hello @context.User.Identity?.Name!

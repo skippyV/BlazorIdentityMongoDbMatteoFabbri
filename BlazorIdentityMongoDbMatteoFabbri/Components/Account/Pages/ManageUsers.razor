@@ -12,7 +12,7 @@
 @inject IdentityRedirectManager _RedirectManager
 
 @* @attribute [AllowAnonymous] *@
-@attribute [Authorize(Policy = "RequireSuperAdminRole")]
+@attribute [Authorize(Policy = Constants.SUPERADMINPOLICYNAME)]
 
 <h4>Admin Page for managing Users</h4>
 
