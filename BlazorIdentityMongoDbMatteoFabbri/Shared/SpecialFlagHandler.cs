@@ -18,43 +18,36 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
         {
             Pages = _iAccessControlService.GetAccessControlPagesCollection();
             string? userIdAsString = null;
-            bool continueProcessing = true;
+            //bool continueProcessing = true;
 
-            var castResource = (HttpContext)context.Resource!;
-            if (castResource == null)
-            {
-                continueProcessing = false;
-            }
             Endpoint? currentEndpoint = null;
-            if (continueProcessing)
-            {
-                currentEndpoint = castResource.GetEndpoint();
-                if (currentEndpoint == null)
-                {
-                    continueProcessing = false;
-                }
-            }
             string currentEndpointString = "";
-            if (continueProcessing)
+
+            if (context.Resource is HttpContext httpContext)
             {
+                currentEndpoint = httpContext.GetEndpoint();
                 currentEndpointString = currentEndpoint!.DisplayName!;
                 int firstSpaceIndex = currentEndpointString.IndexOf(" ");
                 currentEndpointString = currentEndpointString.Substring(1, firstSpaceIndex - 1);
             }
 
-
-            var xx = context?.User;
-            if (xx != null)
+            if (context.Resource == null) // THIS HANDLER IS BEING CALLED TWICE !! SMH
             {
-                if (xx.Identities.Count() > 0)
+                return Task.CompletedTask;
+            }
+
+            System.Security.Claims.ClaimsPrincipal? claimsPrincipal = context?.User;
+            if (claimsPrincipal != null)
+            {
+                if (claimsPrincipal.Identities.Count() > 0)
                 {
-                    var yy = xx.Identities.FirstOrDefault();
-                    if (yy != null)
+                    System.Security.Claims.ClaimsIdentity? claimsIdentity = claimsPrincipal.Identities.FirstOrDefault();
+                    if (claimsIdentity != null)
                     {
-                        var zz = yy.Claims;
-                        if (zz.Count() > 0)
+                        IEnumerable<System.Security.Claims.Claim> claims = claimsIdentity.Claims;
+                        if (claims.Count() > 0)
                         {
-                            userIdAsString = zz.FirstOrDefault()!.Value;
+                            userIdAsString = claims.FirstOrDefault()!.Value;
                         }
                     }
                 }
@@ -69,7 +62,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
                             {
                                 // requirement.SpecialFlag = true;  // See comments in SpecialFlagRequirement.cs
                                 context!.Succeed(requirement);
-                                return Task.CompletedTask;
+                                //return Task.CompletedTask;
                             }
                             break;
                         }                        

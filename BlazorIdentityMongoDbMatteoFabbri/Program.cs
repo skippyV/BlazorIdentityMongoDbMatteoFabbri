@@ -19,7 +19,6 @@ namespace BlazorIdentityMongoDbMatteoFabbri
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
@@ -82,10 +81,6 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                     .AddSignInManager();
                 //.AddDefaultTokenProviders();  // Still confused about this method. When it's needed or not. Apparently, not, in my case.
 
-                // I DO NOT THINK I can just add AddAuthentication() here because
-                // this was working previously without using .AddAuthentication()
-                // ....but then how to add AddGoogle() ?
-
                 builder.Services.AddAuthentication(options =>
                     {
                         options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -109,8 +104,10 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                         policy => policy.RequireRole(Constants.SUPERADMIN));
 
                     options.AddPolicy(Constants.SPECIALFLAGPOLICYNAME, policy => policy.Requirements.Add(new SpecialFlagRequirement()));
+
                 });
-            }            
+
+            }  // end of else block          
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
