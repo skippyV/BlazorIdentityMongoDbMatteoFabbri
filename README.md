@@ -1,10 +1,17 @@
-UPDATE: as of May2,2025 commits, if sources are pulled and run WITHOUT setting up user secrets in Visual Studio,
+UPDATE: If sources are pulled and run WITHOUT setting up user secrets in Visual Studio,
 then the app will fail upon startup.
 
-UPDATE: May13,2025 - working on authentication with custom AuthorizationHandler that uses non-Identity database data
-to authenticate. Within my MongoDB there is a DB named AccessControl with a Collection named Pages.
+UPDATE: The HandleRequirementAsync() of the custom AuthorizationHandler, named SpecialFlagHandler,
+is called twice. The first time the flow appears to work as designed. But the 2nd call may be
+why this authorization model is failing. Hoping for some StackOverflow assistance.
+
+Custom authentication plan: authentication with custom AuthorizationHandler that uses non-Identity 
+database data to authenticate. 
+Within my MongoDB there is a DB named AccessControl with a Collection named Pages.
 Each Document in Pages has a pageName, representing an endpoint, and an array of ID's which are
-Identity users' IDs as a string. Currently this functionality is still a work in progress.
+Identity users' IDs as a string. Currently I manually add data to MongoDB to test the custom
+authentication.
+
 Example of Mongosh command to manually insert a Page Document:
 db.Pages.insertOne({
   pageName: 'AuthFromProfileDB',
