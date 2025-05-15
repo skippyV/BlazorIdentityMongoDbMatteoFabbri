@@ -159,7 +159,11 @@ namespace BlazorIdentityMongoDbMatteoFabbri
 
             app.Run();
         }
-        // Starting to think now that I'll need to seed the database with permissions for Admin and SuperUser
+
+        /// <summary>
+        /// Seeds the database with a superuser role if the user does not exist.
+        /// Expects the superuser name and password to be defined in ENV variables.
+        /// </summary>
         private static void SeedingTheDatabase(WebApplicationBuilder builder, 
                                                WebApplication app,
                                                string rootUserName,

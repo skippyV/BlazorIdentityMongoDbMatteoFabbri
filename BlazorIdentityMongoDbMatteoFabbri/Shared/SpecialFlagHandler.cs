@@ -1,6 +1,7 @@
 ﻿using BlazorIdentityMongoDbMatteoFabbri.Data;
 using BlazorIdentityMongoDbMatteoFabbri.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 
 namespace BlazorIdentityMongoDbMatteoFabbri.Shared
@@ -9,32 +10,40 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
     {
         List<AccessControlPage> Pages = new List<AccessControlPage>();
         private readonly IAccessControlService _iAccessControlService;
-        public SpecialFlagHandler(IAccessControlService _iService)
+        private readonly IHttpContextAccessor _iHttpContextAccessor;
+
+        public SpecialFlagHandler(IAccessControlService _iService, IHttpContextAccessor httpContextAccessor)
         {
             _iAccessControlService = _iService;
+            _iHttpContextAccessor = httpContextAccessor;
         }
 
+        // THIS HANDLER NOW IS CALLED 3 TIMES! This can't be the correct approach...
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SpecialFlagRequirement requirement)
         {
             Pages = _iAccessControlService.GetAccessControlPagesCollection();
             string? userIdAsString = null;
-            //bool continueProcessing = true;
 
             Endpoint? currentEndpoint = null;
             string currentEndpointString = "";
 
             if (context.Resource is HttpContext httpContext)
             {
-                currentEndpoint = httpContext.GetEndpoint();
-                currentEndpointString = currentEndpoint!.DisplayName!;
-                int firstSpaceIndex = currentEndpointString.IndexOf(" ");
-                currentEndpointString = currentEndpointString.Substring(1, firstSpaceIndex - 1);
+                currentEndpoint = httpContext.GetEndpoint();                
             }
-
-            if (context.Resource == null) // THIS HANDLER IS BEING CALLED TWICE !! SMH
+            else if (context.Resource == null && _iHttpContextAccessor != null && _iHttpContextAccessor.HttpContext != null)
             {
+                currentEndpoint = _iHttpContextAccessor.HttpContext.GetEndpoint();
+            }
+            else
+            {
+                Console.WriteLine("ERROR - WHAT THE HECK IS GOING ON NOW?");
                 return Task.CompletedTask;
             }
+
+            currentEndpointString = currentEndpoint!.DisplayName!;
+            int firstSpaceIndex = currentEndpointString.IndexOf(" ");
+            currentEndpointString = currentEndpointString.Substring(1, firstSpaceIndex - 1);
 
             System.Security.Claims.ClaimsPrincipal? claimsPrincipal = context?.User;
             if (claimsPrincipal != null)
