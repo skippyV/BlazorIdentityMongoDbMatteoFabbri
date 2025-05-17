@@ -21,11 +21,12 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
         // THIS HANDLER NOW IS CALLED 3 TIMES! This can't be the correct approach...
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SpecialFlagRequirement requirement)
         {
-            Pages = _iAccessControlService.GetAccessControlPagesCollection();
+            Pages = _iAccessControlService.GetAccessControlPagesCollectionAsList(AccessControlPageConstants.Pages);
             string? userIdAsString = null;
 
             Endpoint? currentEndpoint = null;
             string currentEndpointString = "";
+            string spaceValue = " ";
 
             if (context.Resource is HttpContext httpContext)
             {
@@ -42,7 +43,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
             }
 
             currentEndpointString = currentEndpoint!.DisplayName!;
-            int firstSpaceIndex = currentEndpointString.IndexOf(" ");
+            int firstSpaceIndex = currentEndpointString.IndexOf(spaceValue);
             currentEndpointString = currentEndpointString.Substring(1, firstSpaceIndex - 1);
 
             System.Security.Claims.ClaimsPrincipal? claimsPrincipal = context?.User;
@@ -54,9 +55,13 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
                     if (claimsIdentity != null)
                     {
                         IEnumerable<System.Security.Claims.Claim> claims = claimsIdentity.Claims;
-                        if (claims.Count() > 0)
+                        foreach (var claim in claims)
                         {
-                            userIdAsString = claims.FirstOrDefault()!.Value;
+                            if (claim.Type.Contains("nameidentifier"))
+                            {
+                                userIdAsString = claim.Value;
+                                break;
+                            }
                         }
                     }
                 }

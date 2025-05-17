@@ -1,4 +1,6 @@
 ﻿@page "/AuthFromProfileDB"
+
+
 @* @rendermode @(new InteractiveServerRenderMode(prerender: false)) WHY IS MY SpecialFlagHandler GETTING CALLED TWICE?! This rendermode did not help *@
 @attribute [Authorize(Policy = Constants.SPECIALFLAGPOLICYNAME)]
 

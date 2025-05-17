@@ -1,14 +1,19 @@
 ﻿using BlazorIdentityMongoDbMatteoFabbri.Data;
+using MongoDB.Bson.Serialization;
 
 namespace BlazorIdentityMongoDbMatteoFabbri.Services
 {
     public interface IAccessControlService
     {
-        List<AccessControlPage> GetAccessControlPagesCollection();
+        void CreateCollection(string collectionName);
 
-        AccessControlPage GetAccessControlPage(string recordPage);
+        List<AccessControlPage> GetAccessControlPagesCollectionAsList(string collectionName);
 
-        void SaveOrUpdateAccessControlPage(AccessControlPage record);
+        AccessControlPage GetAccessControlPage(string pageRecordName, string collectionName);
+
+        public void AddAccessControlPage(AccessControlPage page, string collectionName);
+        
+        void UpdateAccessControlPage(AccessControlPage record);
 
         string DeleteAccessControlPage(string recordPage);
     }

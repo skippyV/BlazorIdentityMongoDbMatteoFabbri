@@ -179,17 +179,23 @@ namespace BlazorIdentityMongoDbMatteoFabbri
 
                 // just a test of my simple service - I gotta remember to use the Interace and not the implementation!
                 IRootInfoService iRootInfoService = services.GetRequiredService<IRootInfoService>();
+
+                IAccessControlService _iAccessControlService = services.GetRequiredService<IAccessControlService>();
+
                 string superUserName = iRootInfoService.GetRootUserName();
 
-                // create admin roles
+                // create admin roles if they don't already exist
                 AddRole(Constants.ADMIN, roleManager, app);
                 AddRole(Constants.SUPERADMIN, roleManager, app);
 
-                Task<ApplicationUser?> resultTask = userManager.FindByNameAsync(rootUserName);
                 try
                 {
+                    Task<ApplicationUser?> resultTask = userManager.FindByNameAsync(rootUserName);
+                
+                    //resultTask
                     if (resultTask.Result == null) // resultTask.Result is of type ApplicationUser. If null then User does not yet exist.
                     {
+                        // create the super user and add the roles to it
                         var user = Activator.CreateInstance<ApplicationUser>();
                         user.Email = "test@test.com";
                         user.UserName = rootUserName;
@@ -219,7 +225,21 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                             Console.WriteLine("ERROR adding Admin role to seeded USER!");
                             app.DisposeAsync();
                         }
+
+                        // create the Pages collection
+                        _iAccessControlService.CreateCollection(AccessControlPageConstants.Pages);
+
+                        AccessControlPage newpage = new AccessControlPage();
+                        newpage.pageName = AccessControlPageConstants.AuthFromProfileDB;
+                        newpage.allowedUsers = [user.Id.ToString()];
+
+                        _iAccessControlService.AddAccessControlPage(newpage, AccessControlPageConstants.Pages);
+
+                        AccessControlPage authFromDbPageTest1 = _iAccessControlService.GetAccessControlPage(AccessControlPageConstants.AuthFromProfileDB, AccessControlPageConstants.Pages);
+                        AccessControlPage authFromDbPageTest2 = _iAccessControlService.GetAccessControlPage("MyTEstPageName", AccessControlPageConstants.Pages);
+
                     }
+
                 }
                 catch (Exception ex)
                 {
@@ -228,7 +248,16 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                 }
             }
         }
-        private static void AddRole(string roleName, RoleManager<ApplicationRole> roleManager, WebApplication app)
+
+
+        /// <summary>
+        /// Returns TRUE if role was successfully added, FALSE if the role already exists, exit program upon error
+        /// </summary>
+        /// <param name="roleName"></param>
+        /// <param name="roleManager"></param>
+        /// <param name="app"></param>
+        /// <returns></returns>
+        private static bool AddRole(string roleName, RoleManager<ApplicationRole> roleManager, WebApplication app)
         {
             Task<bool> roleAlreadyExists = roleManager!.RoleExistsAsync(roleName);
             roleAlreadyExists.Wait();
@@ -242,11 +271,13 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                     Console.WriteLine($"ERROR CREATING {roleName} ROLE in DATABASE!");
                     app.DisposeAsync();
                 }
+                return true;
             }
+            return false;
         }
     }
 
-    static class Constants
+    public static class Constants
     {
         public const string ADMIN = "Admin";        
         public const string ADMINPOLICYNAME = "RequireAdminRole";
