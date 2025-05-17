@@ -23,8 +23,8 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Services
 
         public AccessControlPage GetAccessControlPage(string pageRecordName)
         {
-            AccessControlPage? page = iCollectionAccessControlPages.AsQueryable().Where(r => r.pageName == pageRecordName).FirstOrDefault();
-            return page;
+            FilterDefinition<AccessControlPage> filter = Builders<AccessControlPage>.Filter.Eq("pageName", pageRecordName);
+            return iCollectionAccessControlPages.Find<AccessControlPage>(filter).FirstOrDefault();
         }
 
         public void SaveOrUpdateAccessControlPage(AccessControlPage pageRecordName)
