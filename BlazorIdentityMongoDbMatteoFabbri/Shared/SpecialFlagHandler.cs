@@ -2,6 +2,7 @@
 using BlazorIdentityMongoDbMatteoFabbri.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 
 
 namespace BlazorIdentityMongoDbMatteoFabbri.Shared
@@ -11,11 +12,13 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
         List<AccessControlPage> Pages = new List<AccessControlPage>();
         private readonly IAccessControlService _iAccessControlService;
         private readonly IHttpContextAccessor _iHttpContextAccessor;
+        private UserManager<ApplicationUser> _UserManager;
 
-        public SpecialFlagHandler(IAccessControlService _iService, IHttpContextAccessor httpContextAccessor)
+        public SpecialFlagHandler(IAccessControlService _iService, IHttpContextAccessor _httpContextAccessor, UserManager<ApplicationUser> _userManager)
         {
             _iAccessControlService = _iService;
-            _iHttpContextAccessor = httpContextAccessor;
+            _iHttpContextAccessor = _httpContextAccessor;
+            _UserManager = _userManager;
         }
 
         // THIS HANDLER NOW IS CALLED 3 TIMES! This can't be the correct approach...
@@ -45,6 +48,9 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
             currentEndpointString = currentEndpoint!.DisplayName!;
             int firstSpaceIndex = currentEndpointString.IndexOf(spaceValue);
             currentEndpointString = currentEndpointString.Substring(1, firstSpaceIndex - 1);
+
+            Task<ApplicationUser?> debugCompareUser = _UserManager.FindByNameAsync("scoobydoo");
+            ApplicationUser? compareUser = debugCompareUser.Result;
 
             System.Security.Claims.ClaimsPrincipal? claimsPrincipal = context?.User;
             if (claimsPrincipal != null)
