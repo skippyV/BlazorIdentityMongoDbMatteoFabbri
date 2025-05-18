@@ -1,10 +1,6 @@
 UPDATE: If sources are pulled and run WITHOUT setting up user secrets in Visual Studio,
 then the app will fail upon startup.
 
-UPDATE: The HandleRequirementAsync() of the custom AuthorizationHandler, named SpecialFlagHandler,
-is called twice. The first time the flow appears to work as designed. But the 2nd call may be
-why this authorization model is failing. Hoping for some StackOverflow assistance.
-
 Authentication Plan: Customized AuthorizationHandler that uses a non-Identity 
 database (named AccessControl) to correlate users and their access to the resources represented
 by the AccessControl records. 
