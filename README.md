@@ -5,12 +5,12 @@ Authentication Plan: Customized AuthorizationHandler that uses a non-Identity
 database (named AccessControl) to correlate users and their access to the resources represented
 by the AccessControl records. 
 
-Upon initial startup this app will:
-  1) add a root user to the Identity DB with name and password provided by ENV variables.
-  2) create 2 roles in Identity DB: Admin and SuperAdmin
-  3) give the root user both Admin and SuperAdmin roles
-  4) create the AccessControl DB and add a record allowing the root user to
-     access the page (and it's components) referenced by @page directive "/AuthFromProfileDB""
+Upon initial startup this app will:  
+  1) add a root user to the Identity DB with name and password provided by ENV variables.  
+  2) create 2 roles in Identity DB: Admin and SuperAdmin  
+  3) give the root user both Admin and SuperAdmin roles  
+  4) create the AccessControl DB and add a record allowing the root user to  
+     access the page (and it's components) referenced by @page directive "/AuthFromProfileDB"  
 
 This is a Blazor server web app that uses Identity and MongoDb.
 This project will seed the MongoDB with a root user.
