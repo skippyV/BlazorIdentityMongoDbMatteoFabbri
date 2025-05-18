@@ -5,18 +5,16 @@ UPDATE: The HandleRequirementAsync() of the custom AuthorizationHandler, named S
 is called twice. The first time the flow appears to work as designed. But the 2nd call may be
 why this authorization model is failing. Hoping for some StackOverflow assistance.
 
-Custom authentication plan: authentication with custom AuthorizationHandler that uses non-Identity 
-database data to authenticate. 
-Within my MongoDB there is a DB named AccessControl with a Collection named Pages.
-Each Document in Pages has a pageName, representing an endpoint, and an array of ID's which are
-Identity users' IDs as a string. Currently I manually add data to MongoDB to test the custom
-authentication.
+Authentication Plan: Customized AuthorizationHandler that uses a non-Identity 
+database (named AccessControl) to correlate users and their access to the resources represented
+by the AccessControl records. 
 
-Example of Mongosh command to manually insert a Page Document:
-db.Pages.insertOne({
-  pageName: 'AuthFromProfileDB',
-  allowedUsers: ['111b7cb643585fb3c20b9744','241b7cb999999fb3c20b9799','682265786d3715c85d6f0000']
-});
+Upon initial startup this app will:
+	1) add a root user to the Identity DB with name and password provided by ENV variables.
+	2) create 2 roles in Identity DB: Admin and SuperAdmin
+	3) give the root user both Admin and SuperAdmin roles
+	4) create the AccessControl DB and add a record allowing the root user to
+	   access the page (and it's components) referenced by @page directive "/AuthFromProfileDB""
 
 This is a Blazor server web app that uses Identity and MongoDb.
 This project will seed the MongoDB with a root user.

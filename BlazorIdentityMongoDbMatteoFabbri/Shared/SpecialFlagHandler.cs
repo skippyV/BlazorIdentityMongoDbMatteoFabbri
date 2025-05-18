@@ -21,7 +21,6 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Shared
             _UserManager = _userManager;
         }
 
-        // THIS HANDLER NOW IS CALLED 3 TIMES! This can't be the correct approach...
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SpecialFlagRequirement requirement)
         {
             Pages = _iAccessControlService.GetAccessControlPagesCollectionAsList(AccessControlPageConstants.Pages);

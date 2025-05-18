@@ -1,8 +1,7 @@
 ﻿@page "/AuthFromProfileDB"
 
-
 @* @rendermode @(new InteractiveServerRenderMode(prerender: false)) WHY IS MY SpecialFlagHandler GETTING CALLED TWICE?! This rendermode did not help *@
-@attribute [Authorize(Policy = Constants.SPECIALFLAGPOLICYNAME)]
+@* @attribute [Authorize(Policy = Constants.SPECIALFLAGPOLICYNAME)] BECAUSE I HAD SpecialFlagPolicy DECLARED TWICE IN THIS PAGE *@
 
 <h3>AuthWithPolicyDbAccess</h3>
 
@@ -18,7 +17,7 @@
 
 <p>authenticated user MESSAGE: @authMessage</p>
 
-<AuthorizeView Policy="SpecialFlagPolicy">
+<AuthorizeView Policy="SpecialFlagPolicy">  @* CANNOT USE 'Policy = Constants.SPECIALFLAGPOLICYNAME' HERE *@
     <Authorized>
         <p>You satisfy the SpecialFlagPolicy policy</p>
     </Authorized>
@@ -29,7 +28,7 @@
 
 @code {
     private string authMessage = "The user is NOT authenticated.";
-
+    
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationState { get; set; }    
 
