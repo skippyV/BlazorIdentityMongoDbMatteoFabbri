@@ -9,6 +9,7 @@
 @inject SignInManager<ApplicationUser> _SignInManager
 @inject UserManager<ApplicationUser> _UserManager
 @inject NavigationManager _NavigationManager
+@inject RoleManager<ApplicationRole> _RoleManager
 @inject IdentityRedirectManager _RedirectManager
 
 @* @attribute [AllowAnonymous] *@
@@ -25,29 +26,36 @@
 
     @for (int i = 0; i < users.Count; i++)
     {
-        var userLocal = users[i];
-        <div style="display:table-row">
-            <div style="display:table-cell">@userLocal.UserName</div>
-            <div style="display:table-cell">@userLocal.Email</div>
-            <div style="display:table-cell">
-                <form @onsubmit="@(() => EditUser(userLocal))" method="post" @formname="@($"EditFormEdit_{i}")">
-                    <button class="btn btn-primary">EDIT</button>
-                    <AntiforgeryToken />
-                </form>
+        ApplicationUser userLocal = users[i];
+        if (CheckIfUserIsSuperAdmin(userLocal))
+        {
+            continue;
+        }
+        else
+        {
+            <div style="display:table-row">
+                <div style="display:table-cell">@userLocal.UserName</div>
+                <div style="display:table-cell">@userLocal.Email</div>
+                <div style="display:table-cell">
+                    <form @onsubmit="@(() => EditUser(userLocal))" method="post" @formname="@($"EditFormEdit_{i}")">
+                        <button class="btn btn-primary">EDIT</button>
+                        <AntiforgeryToken />
+                    </form>
+                </div>
+                <div style="display:table-cell">
+                    <form @onsubmit="@(() => DeleteUser(userLocal))" method="post" @formname="@($"EditFormDelete_{i}")">
+                        <button class="btn btn-primary">DELETE</button>
+                        <AntiforgeryToken />
+                    </form>
+                </div>
+                <div style="display:table-cell">
+                    <form @onsubmit="@(() => EditRoles(userLocal))" method="post" @formname="@($"EditFormRoles_{i}")">
+                        <button class="btn btn-primary">Edit Roles</button>
+                        <AntiforgeryToken />
+                    </form>
+                </div>
             </div>
-            <div style="display:table-cell">
-                <form @onsubmit="@(() => DeleteUser(userLocal))" method="post" @formname="@($"EditFormDelete_{i}")">
-                    <button class="btn btn-primary">DELETE</button>
-                    <AntiforgeryToken />
-                </form>
-            </div>
-            <div style="display:table-cell">
-                <form @onsubmit="@(() => EditRoles(userLocal))" method="post" @formname="@($"EditFormRoles_{i}")">
-                    <button class="btn btn-primary">Edit Roles</button>
-                    <AntiforgeryToken />
-                </form>
-            </div>
-        </div>
+        }
     }
 </div>
 
@@ -121,7 +129,7 @@
     {
         users = _UserManager.Users.ToList();
     }
-    
+
     async Task EditUser(ApplicationUser selectUsr)
     {
         // from https://blazorhelpwebsite.com/ViewBlogPost/21
@@ -137,7 +145,6 @@
 
             _RedirectManager.RedirectToWithStatus(newUri, "ok", HttpContext);
         }
-
     }
 
     async Task DeleteUser(ApplicationUser selectUsr)
@@ -172,6 +179,43 @@
 
             _RedirectManager.RedirectToWithStatus(newUri, $"Current User: {selectUsr.UserName}", HttpContext);
         }
+    }
+
+    bool CheckIfUserIsSuperAdmin(ApplicationUser user)
+    {
+        if (user is not null)
+        {
+            List<string> rolesIDsList = user.Roles;
+
+            foreach (var roleId in rolesIDsList)
+            {
+                Task<ApplicationRole?> roleTask = _RoleManager.FindByIdAsync(roleId);
+                roleTask.Wait();
+                if(roleTask.Result is not null)
+                {
+                    ApplicationRole role = roleTask.Result;
+                    if (role.Name!.Equals(Constants.SUPERADMIN))
+                    {
+                        //return true; // this works - BUT commenting it out to allow code below to run.
+                        break;
+                    }
+                }
+            }
+            
+            // BELOW CODE DOES NOT WORK
+            Task<IList<string>> rolesListResult = _UserManager.GetRolesAsync(user); // HANGS here
+            rolesListResult.Wait();
+            if (rolesListResult.Result is not null)
+            {
+                IList<string> roles = rolesListResult.Result;
+                if(roles.Contains(Constants.SUPERADMIN))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private sealed class InputModel

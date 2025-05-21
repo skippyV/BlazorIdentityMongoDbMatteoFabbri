@@ -17,6 +17,6 @@ namespace BlazorIdentityMongoDbMatteoFabbri.Data
         public const string pageName = nameof(AccessControlPage.pageName);
         public const string allowedUsers = nameof(AccessControlPage.allowedUsers);
 
-        public const string AuthFromProfileDB = "AuthFromProfileDB";
+        public const string AuthWithPolicyDbAccess = "AuthWithPolicyDbAccess";
     }
 }

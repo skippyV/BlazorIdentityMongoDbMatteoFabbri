@@ -1,6 +1,10 @@
 UPDATE: If sources are pulled and run WITHOUT setting up user secrets in Visual Studio,
 then the app will fail upon startup.
 
+ISSUE: UserManager.GetRolesAsync(ApplicationUser) has an issue and just hangs the app
+when called. Method CheckIfUserIsSuperAdmin() demonstrates issue. Hoping, Matteo has the
+time to investigate.
+
 Authentication Plan: Customized AuthorizationHandler that uses a non-Identity 
 database (named AccessControl) to correlate users and their access to the resources represented
 by the AccessControl records. 

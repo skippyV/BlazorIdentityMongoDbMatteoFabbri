@@ -230,12 +230,12 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                         _iAccessControlService.CreateCollection(AccessControlPageConstants.Pages);
 
                         AccessControlPage newpage = new AccessControlPage();
-                        newpage.pageName = AccessControlPageConstants.AuthFromProfileDB;
+                        newpage.pageName = AccessControlPageConstants.AuthWithPolicyDbAccess;
                         newpage.allowedUsers = [user.Id.ToString()];
 
                         _iAccessControlService.AddAccessControlPage(newpage, AccessControlPageConstants.Pages);
 
-                        AccessControlPage authFromDbPageTest1 = _iAccessControlService.GetAccessControlPage(AccessControlPageConstants.AuthFromProfileDB, AccessControlPageConstants.Pages);
+                        AccessControlPage authFromDbPageTest1 = _iAccessControlService.GetAccessControlPage(AccessControlPageConstants.AuthWithPolicyDbAccess, AccessControlPageConstants.Pages);
                         AccessControlPage authFromDbPageTest2 = _iAccessControlService.GetAccessControlPage("MyTEstPageName", AccessControlPageConstants.Pages);
 
                     }

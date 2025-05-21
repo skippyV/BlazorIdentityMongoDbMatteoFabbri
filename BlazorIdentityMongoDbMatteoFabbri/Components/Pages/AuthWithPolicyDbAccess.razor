@@ -1,7 +1,11 @@
-﻿@page "/AuthFromProfileDB"
+﻿@* @page "/AuthWithPolicyDbAccess" *@
 
-@* @rendermode @(new InteractiveServerRenderMode(prerender: false)) WHY IS MY SpecialFlagHandler GETTING CALLED TWICE?! This rendermode did not help *@
-@* @attribute [Authorize(Policy = Constants.SPECIALFLAGPOLICYNAME)] BECAUSE I HAD SpecialFlagPolicy DECLARED TWICE IN THIS PAGE *@
+@attribute [Route("/" + AccessControlPageConstants.AuthWithPolicyDbAccess)]
+
+@* In an attempt to limit peppering the code with the same strings, one can use the Route attribute
+above to replace the string literal of the @page directive. Reference: https://github.com/dotnet/aspnetcore/issues/25589 *@
+
+@* @attribute [Authorize(Policy = Constants.SPECIALFLAGPOLICYNAME)] WHY IS MY SpecialFlagHandler GETTING CALLED TWICE? BECAUSE I HAD SpecialFlagPolicy DECLARED TWICE IN THIS PAGE *@
 
 <h3>AuthWithPolicyDbAccess</h3>
 
@@ -25,6 +29,7 @@
         <p>You DO NOT satisfy the SpecialFlagPolicy policy!</p>
     </NotAuthorized>
 </AuthorizeView>
+
 
 @code {
     private string authMessage = "The user is NOT authenticated.";
@@ -50,5 +55,7 @@
         }
         
     }
+
+
 
 }
