@@ -2,8 +2,9 @@ UPDATE: If sources are pulled and run WITHOUT setting up user secrets in Visual 
 then the app will fail upon startup.
 
 ISSUE: UserManager.GetRolesAsync(ApplicationUser) has an issue and just hangs the app
-when called. Method CheckIfUserIsSuperAdmin() demonstrates issue. Hoping, Matteo has the
-time to investigate.
+when called within ManageUsers.razor. (Refer to method: CheckIfUserIsSuperAdmin().
+Rather disturbing to see the Manager act so iffy (sometimes during debugging it would work!)
+The work around using RoleManager and user.Roles seems to work every time.
 
 Authentication Plan: Customized AuthorizationHandler that uses a non-Identity 
 database (named AccessControl) to correlate users and their access to the resources represented

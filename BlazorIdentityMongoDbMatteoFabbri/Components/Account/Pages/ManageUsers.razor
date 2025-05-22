@@ -185,33 +185,42 @@
     {
         if (user is not null)
         {
-            List<string> rolesIDsList = user.Roles;
-
-            foreach (var roleId in rolesIDsList)
+            // asynchronous calls from synchronous code is dangerous.
+            // By referencing '.Result' the process is a-waited already.
+            // https://devblogs.microsoft.com/dotnet/should-i-expose-synchronous-wrappers-for-asynchronous-methods/
+            try
             {
-                Task<ApplicationRole?> roleTask = _RoleManager.FindByIdAsync(roleId);
-                roleTask.Wait();
-                if(roleTask.Result is not null)
+                List<string> rolesIDsList = user.Roles;
+
+                foreach (var roleId in rolesIDsList)
                 {
-                    ApplicationRole role = roleTask.Result;
-                    if (role.Name!.Equals(Constants.SUPERADMIN))
+                    Task<ApplicationRole?> roleTask = _RoleManager.FindByIdAsync(roleId);
+
+                    if (roleTask.Result is not null)
                     {
-                        //return true; // this works - BUT commenting it out to allow code below to run.
-                        break;
+                        ApplicationRole role = roleTask.Result;
+                        if (role.Name!.Equals(Constants.SUPERADMIN))
+                        {
+                            return true; // this works - BUT commenting it out to allow code below to run.
+                        }
                     }
                 }
+
+                // // BELOW CODE DOES NOT WORK
+                // Task<IList<string>> rolesListResult = _UserManager.GetRolesAsync(user); // HANGS here. UPDATE: added more statements and now it works sometimes while debugging!
+                //
+                // if (rolesListResult.Result is not null)
+                // {
+                //     IList<string> roles = rolesListResult.Result;
+                //     if (roles.Contains(Constants.SUPERADMIN))
+                //     {
+                //         return true;
+                //     }
+                // }
             }
-            
-            // BELOW CODE DOES NOT WORK
-            Task<IList<string>> rolesListResult = _UserManager.GetRolesAsync(user); // HANGS here
-            rolesListResult.Wait();
-            if (rolesListResult.Result is not null)
+            catch (Exception e)
             {
-                IList<string> roles = rolesListResult.Result;
-                if(roles.Contains(Constants.SUPERADMIN))
-                {
-                    return true;
-                }
+                Console.WriteLine(e.ToString());
             }
         }
 
