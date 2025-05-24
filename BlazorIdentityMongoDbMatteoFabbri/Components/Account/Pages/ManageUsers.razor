@@ -13,7 +13,8 @@
 @inject IdentityRedirectManager _RedirectManager
 
 @* @attribute [AllowAnonymous] *@
-@attribute [Authorize(Policy = Constants.SUPERADMINPOLICYNAME)]
+@* @attribute [Authorize(Policy = Constants.SUPERADMINPOLICYNAME)] *@
+@attribute [Authorize]
 
 <h4>Admin Page for managing Users</h4>
 
@@ -24,32 +25,41 @@
     <div style="display:table-column; background-color:orange"> </div>
     <div style="display:table-column;"> </div>
 
-    @for (int i = 0; i < users.Count; i++)
+    @for (int i = 0; i < users.Count; i++) // this is fugly... call it noodling-around code
     {
-        ApplicationUser userLocal = users[i];
-        if (CheckIfUserIsSuperAdmin(userLocal))
+        ApplicationUser displayUser = users[i];
+
+        if (CheckIfSelectedUserIsInRole(displayUser, Constants.SUPERADMIN)) // do not allow superadmins to affect other existing superadmins
         {
             continue;
         }
-        else
+
+        if (CheckIfSelectedUserIsInRole(displayUser, Constants.ADMIN))
+        {
+            if (!currentUserIsSuperAdmin)  // only superadmins can affect existing admins
+            {
+                continue;
+            }
+        }
+        //else
         {
             <div style="display:table-row">
-                <div style="display:table-cell">@userLocal.UserName</div>
-                <div style="display:table-cell">@userLocal.Email</div>
+                <div style="display:table-cell">@displayUser.UserName</div>
+                <div style="display:table-cell">@displayUser.Email</div>
                 <div style="display:table-cell">
-                    <form @onsubmit="@(() => EditUser(userLocal))" method="post" @formname="@($"EditFormEdit_{i}")">
+                    <form @onsubmit="@(() => EditUser(displayUser))" method="post" @formname="@($"EditFormEdit_{i}")">
                         <button class="btn btn-primary">EDIT</button>
                         <AntiforgeryToken />
                     </form>
                 </div>
                 <div style="display:table-cell">
-                    <form @onsubmit="@(() => DeleteUser(userLocal))" method="post" @formname="@($"EditFormDelete_{i}")">
+                    <form @onsubmit="@(() => DeleteUser(displayUser))" method="post" @formname="@($"EditFormDelete_{i}")">
                         <button class="btn btn-primary">DELETE</button>
                         <AntiforgeryToken />
                     </form>
                 </div>
                 <div style="display:table-cell">
-                    <form @onsubmit="@(() => EditRoles(userLocal))" method="post" @formname="@($"EditFormRoles_{i}")">
+                    <form @onsubmit="@(() => EditRoles(displayUser))" method="post" @formname="@($"EditFormRoles_{i}")">
                         <button class="btn btn-primary">Edit Roles</button>
                         <AntiforgeryToken />
                     </form>
@@ -119,6 +129,11 @@
 
     private List<ApplicationUser> users;
 
+    private System.Security.Claims.ClaimsPrincipal? currentUserClaimsPrincipal;
+
+    private bool currentUserIsAdmin = false;
+    private bool currentUserIsSuperAdmin = false;
+
     // protected override async Task OnInitializedAsync()
     // {
     //     // https://stackoverflow.com/questions/21406973/wrapping-synchronous-code-into-asynchronous-call
@@ -128,6 +143,26 @@
     protected override void OnInitialized()
     {
         users = _UserManager.Users.ToList();
+
+        if (HttpContext.User is System.Security.Claims.ClaimsPrincipal principal)
+        {
+            foreach (System.Security.Claims.Claim claim in principal.Claims)
+            {
+                Console.WriteLine("CLAIM TYPE: " + claim.Type + "; CLAIM VALUE: " + claim.Value);
+                if(claim.Type.Contains(@"identity/claims/role"))
+                {
+                    if(claim.Value.Equals(Constants.ADMIN))
+                    {
+                        currentUserIsAdmin = true;
+                    }
+                    if (claim.Value.Equals(Constants.SUPERADMIN))
+                    {
+                        currentUserIsSuperAdmin = true;
+                    }
+                }
+            }
+        }
+
     }
 
     async Task EditUser(ApplicationUser selectUsr)
@@ -181,6 +216,40 @@
         }
     }
 
+    bool CheckIfSelectedUserIsInRole(ApplicationUser selectedUser, string roleName)
+    {
+        if (selectedUser is not null)
+        {
+            // asynchronous calls from synchronous code is dangerous.
+            // By referencing '.Result' the process is a-waited already.
+            // https://devblogs.microsoft.com/dotnet/should-i-expose-synchronous-wrappers-for-asynchronous-methods/
+            try
+            {
+                List<string> rolesIDsList = selectedUser.Roles;
+
+                foreach (var roleId in rolesIDsList)
+                {
+                    Task<ApplicationRole?> roleTask = _RoleManager.FindByIdAsync(roleId);
+
+                    if (roleTask.Result is not null)
+                    {
+                        ApplicationRole role = roleTask.Result;
+                        if (role.Name!.Equals(roleName))
+                        {
+                            return true; 
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
+
+        return false;
+    }
+
     bool CheckIfUserIsSuperAdmin(ApplicationUser user)
     {
         if (user is not null)
@@ -201,7 +270,7 @@
                         ApplicationRole role = roleTask.Result;
                         if (role.Name!.Equals(Constants.SUPERADMIN))
                         {
-                            return true; // this works - BUT commenting it out to allow code below to run.
+                            return true; // this works - BUT when I comment it out to allow the code below to run, the code below fails.
                         }
                     }
                 }

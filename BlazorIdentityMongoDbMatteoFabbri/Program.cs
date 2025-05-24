@@ -68,6 +68,7 @@ namespace BlazorIdentityMongoDbMatteoFabbri
                 Console.WriteLine("ERROR ERROR - MongoDB service may not be running!");
                 Console.WriteLine("ERROR ERROR - MongoDB service may not be running!");
                 Console.WriteLine("ERROR ERROR - MongoDB service may not be running!");
+                return;
             }
             else
             {

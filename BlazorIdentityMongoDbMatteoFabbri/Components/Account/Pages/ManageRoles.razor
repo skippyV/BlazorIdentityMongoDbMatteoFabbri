@@ -13,7 +13,8 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager _RedirectManager
 
-@attribute [AllowAnonymous]
+@* @attribute [AllowAnonymous] *@
+@attribute [Authorize(Policy = Constants.ADMINPOLICYNAME)]
 
 <h3>Role Manager</h3>
 <hr />
