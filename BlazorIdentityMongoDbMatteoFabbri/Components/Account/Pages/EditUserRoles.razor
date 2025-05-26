@@ -18,19 +18,12 @@
 
 <StatusMessage Message="@errorMessage" />
 
-<h4>List of Available Roles</h4>
-<ul style="max-height:100px">
-    @foreach (var role in roles)
-    {
-        <li>@role.Name</li>
-    }
-</ul>
-
 <hr />
 
 @* 
-    Note: without the below null-check for currentUser, the ABOVE
+    Note: without the below null-check for currentSelectedUser, the ABOVE
     foreach(var role in roles) gets a null reference error!! 
+    Haven't been able to recreate this behavior - will remove comment on the next commit.
 *@
 
 @if(currentSelectedUser is not null)
@@ -53,53 +46,100 @@
     </ul>
 }
 
-
-
+<hr />
+<h4>Add or Delete Roles for User</h4>
 <div style="background-color:aquamarine; display:table">
     <div style="display:table-column;"> </div>
     <div style="display:table-column;"> </div>
     <div style="display:table-column;"> </div>
 
-
     @for (int i = 0; i < roles.Count; i++)
     {
-        var roleLocal = roles[i];
+        ApplicationRole? roleLocal = roles[i];
+        disableDeleteRoleButton = false;
+
+        if (roleLocal is not null)
+        {
+            if (roleLocal.Name!.Equals(Constants.SUPERADMIN))
+            {
+                if (!editorIsSuperAdmin)
+                {
+                    continue;
+                }
+                else
+                {
+                    disableDeleteRoleButton = true;
+                }
+            }
+            else if (roleLocal.Name!.Equals(Constants.ADMIN))
+            {
+                if (!editorIsAdmin)
+                {
+                    continue; // 
+                }
+                if (!editorIsSuperAdmin) // SuperAdmins are also Admins by design.
+                {
+                    disableDeleteRoleButton = true;
+                }
+            }
+        }
+
         <div style="display:table-row">
-            <div style="display:table-cell">@roleLocal.Name</div>
+            <div style="display:table-cell">@roleLocal!.Name</div>
 
             <div style="display:table-cell">
-                <form @onsubmit="@(() => AddRoleForUser(roleLocal))" method="post" @formname="@($"EditUserRolesAddRoleForm_{i}")">
+                <form @onsubmit="@(() => AddRoleForUser(roleLocal))"  method="post" @formname="@($"EditUserRolesAddRoleForm_{i}")">
                     <button class="btn btn-primary">ADD</button>
                     <AntiforgeryToken />
                 </form>
             </div>
+
             <div style="display:table-cell">
                 <form @onsubmit="@(() => DeleteRoleForUser(roleLocal))" method="post" @formname="@($"EditUserRolesRemoveRoleForm_{i}")">
-                    <button class="btn btn-primary">DELETE</button>
+                    <button disabled="@disableDeleteRoleButton" class="btn btn-primary">DELETE</button>                   
                     <AntiforgeryToken />
                 </form>
             </div>
+
         </div>
     }
+
 </div>
+<hr />
+<h4>List of ALL Roles</h4>
+<ul style="max-height:100px">
+    @foreach (var role in roles)
+    {
+        <li>@role.Name</li>
+    }
+</ul>
 
 @code {
-    private string? errorMessage;
+    // SuperAdmins are also Admins by design.
+    //
+    // SuperAdmin can add user to SuperAdmin
+    // SuperAdmin can not delete SuperAdmin
+    // SuperAdmin can add user to Admin
+    // SuperAdmin can delete Admin
+    // Admin cannot delete nor add SuperAdmin
+    // Admin can add user to Admin
+    // Admin cannot delete Admin
+
+    string? errorMessage;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromQuery]
     public string? SelectedUserId { get; set; }
     ApplicationUser? currentSelectedUser = null;
 
-    ApplicationUser? userEditor = null;
+    bool editorIsAdmin = false;
+    bool editorIsSuperAdmin = false;
+    bool disableDeleteRoleButton = false;
 
-    private List<ApplicationRole> roles = new List<ApplicationRole>();
-
-    private string userRole { get; set; }
-
-
+    List<ApplicationRole> roles = new List<ApplicationRole>();  // why declare access modifiers which are already the default? Unless it is a coding style. 
+    // I'm going to start removing redundant access modifiers (e.g. removing 'private')
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,29 +147,32 @@
         await SetCurrentSelectedUser();
     }
 
-    private async Task SetCurrentSelectedUser()
+    async Task SetCurrentSelectedUser()
     {
         if (SelectedUserId is not null)
         {
-            currentSelectedUser = await _UserManager.FindByIdAsync(SelectedUserId);          
+            currentSelectedUser = await _UserManager.FindByIdAsync(SelectedUserId);
         }
 
-        if (userEditor is null)
+        string currentUserEditorName = HttpContext.User.Identity!.Name!;
+
+        if (currentUserEditorName is not null)
         {
-            string currentUserEditorName = HttpContext.User.Identity!.Name!;
-
-            if(currentUserEditorName is not null && userEditor is null)
+            ApplicationUser? usr = await _UserManager.FindByNameAsync(currentUserEditorName);
+            if (usr is not null)
             {
-                ApplicationUser? usr = await _UserManager.FindByNameAsync(currentUserEditorName);
-                if(usr is not null)
+                IList<string> rolesOfEditor = await _UserManager.GetRolesAsync(usr);
+                foreach(var role in rolesOfEditor)
                 {
-                    userEditor = usr;
+                    if(role.Equals(Constants.ADMIN))
+                    {
+                        editorIsAdmin = true;
+                    }
+                    if (role.Equals(Constants.SUPERADMIN))
+                    {
+                        editorIsSuperAdmin = true;
+                    }
                 }
-            }
-
-            if (HttpContext.User is System.Security.Claims.ClaimsPrincipal principal)
-            {
-                var userEditor2 = HttpContext.User;
             }
         }
     }
@@ -176,7 +219,7 @@
         }
     }
 
-    private string AddUserToURI(string endpoint)
+    string AddUserToURI(string endpoint)
     {
         var newUri = _NavigationManager.ToAbsoluteUri(endpoint).AbsoluteUri;
         newUri += "?" + $"SelectedUserId={SelectedUserId}";

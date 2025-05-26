@@ -29,6 +29,8 @@
     {
         ApplicationUser displayUser = users[i];
 
+        //var debugCheck = CheckIfUserIsSuperAdmin(displayUser); // Leaving this method for reference
+
         if (CheckIfSelectedUserIsInRole(displayUser, Constants.SUPERADMIN)) // do not allow superadmins to affect other existing superadmins
         {
             continue;
@@ -162,7 +164,6 @@
                 }
             }
         }
-
     }
 
     async Task EditUser(ApplicationUser selectUsr)
@@ -250,6 +251,8 @@
         return false;
     }
 
+    // Leaving this method for reference to the wacky _UserManager behavior 
+    // in commented portion of method.
     bool CheckIfUserIsSuperAdmin(ApplicationUser user)
     {
         if (user is not null)
