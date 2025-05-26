@@ -33,14 +33,14 @@
     foreach(var role in roles) gets a null reference error!! 
 *@
 
-@if(currentUser is not null)
+@if(currentSelectedUser is not null)
 {
-    <h4>Current Roles for @currentUser.UserName</h4>
+    <h4>Current Roles for @currentSelectedUser.UserName</h4>
 
     <ul style="max-height:100px">
-        @if (currentUser.Roles.Count > 0)
+        @if (currentSelectedUser.Roles.Count > 0)
         {
-            @foreach (var roleName in currentUser.Roles)
+            @foreach (var roleName in currentSelectedUser.Roles)
             {
                 var testRole = _RoleManager.FindByIdAsync(roleName);
                 <li>@testRole!.Result!.Name</li>
@@ -91,24 +91,46 @@
 
     [SupplyParameterFromQuery]
     public string? SelectedUserId { get; set; }
+    ApplicationUser? currentSelectedUser = null;
+
+    ApplicationUser? userEditor = null;
 
     private List<ApplicationRole> roles = new List<ApplicationRole>();
 
     private string userRole { get; set; }
 
-    ApplicationUser currentUser = null;
+
 
     protected override async Task OnInitializedAsync()
     {
         roles = _RoleManager.Roles.ToList();
-        await SetCurrentUser();
+        await SetCurrentSelectedUser();
     }
 
-    private async Task SetCurrentUser()
+    private async Task SetCurrentSelectedUser()
     {
         if (SelectedUserId is not null)
         {
-            currentUser = await _UserManager.FindByIdAsync(SelectedUserId);
+            currentSelectedUser = await _UserManager.FindByIdAsync(SelectedUserId);          
+        }
+
+        if (userEditor is null)
+        {
+            string currentUserEditorName = HttpContext.User.Identity!.Name!;
+
+            if(currentUserEditorName is not null && userEditor is null)
+            {
+                ApplicationUser? usr = await _UserManager.FindByNameAsync(currentUserEditorName);
+                if(usr is not null)
+                {
+                    userEditor = usr;
+                }
+            }
+
+            if (HttpContext.User is System.Security.Claims.ClaimsPrincipal principal)
+            {
+                var userEditor2 = HttpContext.User;
+            }
         }
     }
 
@@ -116,9 +138,9 @@
     {
         var newUri = AddUserToURI("/Account/EditUserRoles"); // this page
 
-        if (currentUser is not null && role is not null)
+        if (currentSelectedUser is not null && role is not null)
         {
-            IdentityResult result = await _UserManager.AddToRoleAsync(currentUser, role.Name!);
+            IdentityResult result = await _UserManager.AddToRoleAsync(currentSelectedUser, role.Name!);
 
             if (result.Succeeded)
             {
@@ -137,9 +159,9 @@
     {
         var newUri = AddUserToURI("/Account/EditUserRoles"); // this page
 
-        if (currentUser is not null && role is not null)
+        if (currentSelectedUser is not null && role is not null)
         {
-            IdentityResult result = await _UserManager.RemoveFromRoleAsync(currentUser, role.Name!);
+            IdentityResult result = await _UserManager.RemoveFromRoleAsync(currentSelectedUser, role.Name!);
 
             if(result.Succeeded)
             {

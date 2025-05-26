@@ -59,11 +59,15 @@
     private List<ApplicationRole> roles = new List<ApplicationRole>();
 
     private string userRole { get; set; }
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         roles = _RoleManager.Roles.ToList();
     }
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     roles = _RoleManager.Roles.ToList();
+    // }
 
     private async Task CreateRole()
     {
